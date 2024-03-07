@@ -1,0 +1,389 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("")
+gui.Form1..size(2715,1170)
+gui.Form1..position(0,0)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.lbl1.create(label,"Please Wait",True,1935,255,1,200,350,True,2,Arial,10,-2147483633,0)
+gui.Form1.lbl1.fontstyle(True,False,False,False)
+gui.Form1.lbl2.create(label,"Loading Schedule",True,1935,255,1,200,110,True,2,Arial,10,-2147483633,0)
+gui.Form1.lbl2.fontstyle(True,False,False,False)
+
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Variable.UDT.WOS.Define("NestID",String,"NEST_ID")
+Variable.UDT.WOS.Define("NestSuffix",String)
+Variable.UDT.WOS.Define("Increment",String)
+Variable.UDT.WOS.Define("Job",String)
+Variable.UDT.WOS.Define("Suffix",String)
+Variable.UDT.WOS.Define("BegDate",String)
+Variable.UDT.WOS.Define("EndDate",String)
+Variable.UDT.WOS.Define("PartLoc",String)
+Variable.UDT.WOS.Define("Nest_Qty",Float,"NEST_QTY")
+Variable.UDT.WOS.Define("FName",String,"FNAME")
+Variable.UDT.WOS.Define("FType",String,"FTYPE")
+Variable.UDT.WOS.Define("PrdRef",String,"PRDREF")
+Variable.UDT.WOS.Define("PrdName",String,"PRDNAME")
+Variable.UDT.WOS.Define("Quantity",Float,"QUANTITY")
+Variable.UDT.WOS.Define("MnORef",String,"MNOREF")
+Variable.UDT.WOS.Define("Order_Qty",Float,"ORDERQUANTITY")
+Variable.UDT.WOS.Define("Schedule",String,"SCHEDULE")
+Variable.UDT.WOS.Define("Schedule_Suffix",String,"SCHEDULESUFFIX")
+Variable.UDT.WOS.Define("TagNo",String,"TAGNO")
+Variable.UDT.WOS.Define("WC",String,"WC")
+Variable.UDT.WOS.Define("ScheduleSeq",string,"SCHEDULESEQ")
+Variable.UDT.WOS.Define("LaborSeq",string,"LABORSEQ")
+Variable.UDT.WOS.Define("MatlSeq",string,"MATLSEQ")
+Variable.UDT.WOS.Define("DateSchedFrm",Date,"DATESCHEDFROM")
+Variable.UDT.WOS.Define("SortOrder",String)
+Variable.UDT.WOS.Define("BegDueDate",String)
+Variable.UDT.WOS.Define("EndDueDate",String)
+Variable.UDT.WOS.Define("FillerA",String)
+Variable.UDT.WOS.Define("FillerB",String)
+Variable.UDT.WOS.Define("Complete",Boolean,"Complete")
+
+Variable.uGlobal.uWOS.Declare("WOS")
+Program.Sub.Preflight.End
+
+
+Program.Sub.Main.Start
+'Coded by: JCT
+'Project Start Date: 06/01/2011
+
+Gui.Form1..Show
+
+V.Local.sDocList.Declare(String)
+V.Local.sDocName.Declare(String)
+V.Local.sImportDir.Declare(String)
+V.Local.sDir.Declare(String)
+V.Local.iFor.Declare(Long)
+V.Local.bEofNest.Declare(Boolean)
+V.Local.bEofDoc.Declare(Boolean)
+V.Local.bEofPart.Declare(Boolean)
+V.Local.bExists.Declare(Boolean)
+V.Local.iForDocs.Declare(Long)
+V.Local.iForNest.Declare(Long)
+V.Local.iForFile.Declare(Long)
+V.Local.iForPart.Declare(Long)
+V.Local.sSet.Declare(String)
+V.Local.sSchedId.Declare(String)
+V.Local.sNestID.Declare(String)
+V.Local.iNestQty.Declare(Long)
+V.Local.sFName.Declare(String)
+V.Local.sFType.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sXquery.Declare(String)
+V.Local.sDoc.Declare(String)
+V.Local.sDocBkp.Declare(String)
+V.Local.iRet.Declare(Long)
+V.Local.sTemp.Declare(String)
+V.Local.sUpdate.Declare(String)
+V.Local.sSel.Declare(String)
+
+
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\FlexScheduleIn\",V.Local.sDir)
+F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\FlexScheduleIn\imported",V.Local.sImportDir)
+	F.Intrinsic.File.DirExists(V.Local.sImportDir,V.Local.bExists)
+		F.Intrinsic.Control.If(V.Local.bExists,=,False)
+			F.Intrinsic.File.CreateDir(V.Local.sImportDir)
+		F.Intrinsic.Control.EndIf
+F.Intrinsic.Debug.Stop
+F.Intrinsic.File.GetFileList(V.Local.sDir,V.Local.sDocList)
+F.Intrinsic.String.Split(V.Local.sDocList,":",V.Local.sDocList)
+
+F.Intrinsic.Control.If(V.Local.sDocList(0).Trim,<>,"")
+'for each document
+F.Intrinsic.Control.For(V.Local.iForDocs,V.Local.sDocList.LBound,V.Local.sDocList.UBound,1)
+F.Intrinsic.String.Concat("xmlDoc",V.Local.iForDocs,V.Local.sDoc)
+V.Local.sNestID.Redim(0,0)
+V.Local.iNestQty.Redim(0,0)
+V.Local.iForPart.Redim(0,0)
+V.uGlobal.uWOS.Redim(0,0)
+'get file path
+	F.Intrinsic.String.Concat(V.Local.sDir,V.Local.sDocList(V.Local.iForDocs),V.Local.sDocName)
+	F.Intrinsic.String.Concat(V.Local.sImportDir,"\",V.Local.sDocList(V.Local.iForDocs),V.Local.sDocBkp)
+'load document and Query document to a node set using Xpath
+	V.local.bEOFNest.Set(False)
+	V.Local.iForNest.Set(0)
+F.Intrinsic.Debug.Stop
+	F.Global.XML.LoadDocument(V.Local.sDoc,V.Local.sDocName,False,True,False,False)
+		F.global.XML.Query(V.Local.sDoc,"set1","//*/NESTING")
+			F.Intrinsic.Control.dountil(V.local.bEOFNest,=,True)
+				V.Local.sNestID.RedimPreserve(0,V.Local.iForNest)
+				V.Local.iNestQty.RedimPreserve(0,V.Local.iForNest)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"set1","NestID",V.Local.sNestID(V.Local.iForNest))
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"set1","Quantity",V.Local.iNestQty(V.Local.iForNest))
+				F.Intrinsic.Math.Add(V.Local.iForNest,1,V.Local.iForNest)
+			F.global.xml.next(V.Local.sDoc,"set1",V.local.bEOFNest)
+			F.Intrinsic.Control.loop
+		Function.global.xml.closeSet(V.Local.sDoc,"set1")
+
+F.Intrinsic.Debug.Stop
+		V.Local.bEofDoc.Set(False)
+		V.Local.iForFile.Set(0)
+		F.global.XML.Query(V.Local.sDoc,"Set2","//*/DOCUMENT")
+			F.Intrinsic.Control.dountil(V.local.bEOFDoc,=,True)
+				V.Local.sFName.RedimPreserve(0,V.Local.iForFile)
+				V.Local.sFType.RedimPreserve(0,V.Local.iForFile)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set2","FName",V.Local.sFName(V.Local.iForFile))
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set2","FType",V.Local.sFType(V.Local.iForFile))
+				F.Intrinsic.Math.Add(V.Local.iForFile,1,V.Local.iForFile)
+			F.global.xml.next(V.Local.sDoc,"set2",V.local.bEOFDoc)
+			F.Intrinsic.Control.loop
+		Function.global.xml.closeSet(V.Local.sDoc,"Set2")
+' for each nest ID
+		V.Local.bEofPart.Set(False)
+		F.Intrinsic.Control.For(V.Local.iForNest,V.Local.sNestID.LBound,V.Local.sNestID.UBound,1)
+			V.Local.bEofPart.Set(False)
+			F.Intrinsic.String.Concat("//*/NESTING[@NestID=",V.Local.sNestID(v.Local.iForNest),"]/PARTS/PART",V.Local.sXquery)
+			F.Global.XML.Query(V.Local.sDoc,"set3",V.Local.sXquery)
+				F.Intrinsic.Control.dountil(V.local.bEOFPart,=,True)
+					V.uGlobal.uWOS.RedimPreserve(0,V.Local.iForPart)
+						F.Intrinsic.String.Split(V.Local.sFName(v.Local.iForNest),"\",V.Local.sTemp)
+						F.Intrinsic.String.Split(V.Local.sTemp(V.Local.sTemp.UBound),".",V.Local.sSchedId)
+					V.uGlobal.uWOS(v.Local.iForPart)!Schedule.Set(V.Local.sSchedId(0))
+					V.uGlobal.uWOS(v.Local.iForPart)!NestID.Set(V.Local.sNestID(v.Local.iForNest))
+					V.uGlobal.uWOS(v.Local.iForPart)!Nest_Qty.Set(V.Local.iNestQty(v.Local.iForNest))
+					V.uGlobal.uWOS(v.Local.iForPart)!FName.Set(V.Local.sFName(v.Local.iForNest))
+					V.uGlobal.uWOS(v.Local.iForPart)!FType.Set(V.Local.sFType(v.Local.iForNest))
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","PrdRef",V.uGlobal.uWOS(v.Local.iForPart)!PrdRef)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","PrdName",V.uGlobal.uWOS(v.Local.iForPart)!PrdName)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","Quantity",V.uGlobal.uWOS(v.Local.iForPart)!Quantity)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","MnORef",V.uGlobal.uWOS(v.Local.iForPart)!MnORef)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","OrderQuantity",V.uGlobal.uWOS(v.Local.iForPart)!Order_Qty)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","ScheduleSuffix",V.uGlobal.uWOS(v.Local.iForPart)!Schedule_Suffix)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","TagNo",V.uGlobal.uWOS(v.Local.iForPart)!TagNo)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","WC",V.uGlobal.uWOS(v.Local.iForPart)!WC)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","ScheduleSeq",V.uGlobal.uWOS(v.Local.iForPart)!ScheduleSeq)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","LaborSeq",V.uGlobal.uWOS(v.Local.iForPart)!LaborSeq)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","MatlSeq",V.uGlobal.uWOS(v.Local.iForPart)!MatlSeq)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"Set3","DateSchedFrom",V.uGlobal.uWOS(v.Local.iForPart)!DateSchedFrm)
+
+					F.Intrinsic.Math.Add(V.Local.iForPart,1,V.Local.iForPart)
+				F.global.xml.next(V.Local.sDoc,"set3",V.local.bEOFPart)
+				F.Intrinsic.Control.loop
+			Function.global.xml.closeSet(V.Local.sDoc,"set3")
+		F.Intrinsic.Control.Next(V.Local.iForNest)
+
+	F.Global.XML.CloseDocument(V.Local.sDoc)
+'move doc to completed folder
+	F.Intrinsic.File.CopyFile(V.Local.sDocName,V.Local.sDocBkp)
+	F.Intrinsic.File.DeleteFile(V.Local.sDocName)
+F.Intrinsic.Control.Next(V.Local.iForDocs)
+
+'write records to the table
+F.Intrinsic.Control.For(V.Local.iForNest,V.uGlobal.uWOS!NestID.LBound,V.uGlobal.uWOS!Nest_Qty.UBound,1)
+	F.Intrinsic.String.Concat("select * from Lantek_3459_WOS where NEST_ID='",V.uGlobal.uWOS(v.Local.iForNest)!NestID,"' and SCHEDULE='",V.uGlobal.uWOS(v.Local.iForNest)!Schedule,"' and SCHEDULESUFFIX='",V.uGlobal.uWOS(v.Local.iForNest)!Schedule_Suffix,"' and SCHEDULESEQ='",V.uGlobal.uWOS(v.Local.iForNest)!ScheduleSeq,"'",V.Local.sSel)
+	F.ODBC.Connection!Con.OpenRecordsetRW("rstWOS",V.Local.sSel)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstWOS.EOF,=,False)
+				F.Intrinsic.Math.Add(V.uGlobal.uWOS(v.Local.iForNest)!Quantity,V.ODBC.Con!rstWOS.FieldVal!QUANTITY,V.uGlobal.uWOS(v.Local.iForNest)!Quantity)
+		F.Intrinsic.Control.else
+			F.ODBC.Con!rstWOS.AddNew
+				F.ODBC.Con!rstWOS.Set!NEST_ID(V.uGlobal.uWOS(v.Local.iForNest)!NestID)
+				F.ODBC.Con!rstWOS.Set!NEST_QTY(V.uGlobal.uWOS(v.Local.iForNest)!Nest_Qty)
+				F.ODBC.Con!rstWOS.Set!FNAME(V.uGlobal.uWOS(v.Local.iForNest)!Fname)
+				F.ODBC.Con!rstWOS.Set!FTYPE(V.uGlobal.uWOS(v.Local.iForNest)!Ftype)
+				F.ODBC.Con!rstWOS.Set!PRDREF(V.uGlobal.uWOS(v.Local.iForNest)!PrdRef)
+				F.ODBC.Con!rstWOS.Set!PRDNAME(V.uGlobal.uWOS(v.Local.iForNest)!PrdName)
+				F.ODBC.Con!rstWOS.Set!MNOREF(V.uGlobal.uWOS(v.Local.iForNest)!MnORef)
+				F.ODBC.Con!rstWOS.Set!ORDERQUANTITY(V.uGlobal.uWOS(v.Local.iForNest)!Order_Qty)
+				F.ODBC.Con!rstWOS.Set!SCHEDULESUFFIX(V.uGlobal.uWOS(v.Local.iForNest)!Schedule_Suffix)
+				F.ODBC.Con!rstWOS.Set!TAGNO(V.uGlobal.uWOS(v.Local.iForNest)!TagNo)
+				F.ODBC.Con!rstWOS.Set!WC(V.uGlobal.uWOS(v.Local.iForNest)!WC)
+				F.ODBC.Con!rstWOS.Set!SCHEDULESEQ(V.uGlobal.uWOS(v.Local.iForNest)!ScheduleSeq)
+				F.ODBC.Con!rstWOS.Set!LABORSEQ(V.uGlobal.uWOS(v.Local.iForNest)!LaborSeq)
+				F.ODBC.Con!rstWOS.Set!MATLSEQ(V.uGlobal.uWOS(v.Local.iForNest)!MatlSeq)
+				F.ODBC.Con!rstWOS.Set!DATESCHEDFROM(V.uGlobal.uWOS(v.Local.iForNest)!DateSchedFrm)
+				F.ODBC.Con!rstWOS.Set!SCHEDULE(V.uGlobal.uWOS(v.Local.iForNest)!Schedule)
+				F.ODBC.Con!rstWOS.Set!COMPLETE(False)
+		F.Intrinsic.Control.Endif
+				F.ODBC.Con!rstWOS.Set!QUANTITY(V.uGlobal.uWOS(v.Local.iForNest)!Quantity)
+			F.ODBC.Con!rstWOS.Update
+	F.ODBC.Con!rstWOS.Close
+F.Intrinsic.Control.Next(V.Local.iForNest)
+
+F.Intrinsic.Control.CallSub(Loadschedule)
+
+Gui.Form1..Visible(false)
+'F.Intrinsic.UI.Msgbox("Import Complete")
+F.Intrinsic.Control.Else
+	Gui.Form1..Visible(false)
+'	F.Intrinsic.UI.Msgbox("No documents to import")
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.End
+
+
+
+Program.Sub.Main.End
+
+
+Program.Sub.LoadSchedule.Start
+
+
+V.Local.sLoadFile.Declare(String)
+V.Local.sLoadData.Declare(String)
+V.Local.sFiller.Declare(String)
+V.Local.iFor.Declare(Long)
+V.Local.sUpdate.Declare(String)
+V.Local.sCurrentNest.Declare(String)
+V.Local.sChildJob.Declare(String)
+V.Local.sParentJob.Declare(String)
+V.Local.sParentSuffx.Declare(String)
+V.Local.sJobOp.Declare(String)
+V.Local.iSeq.Declare(Long)
+V.Local.sSeq.Declare(String)
+V.Local.sSel.Declare(String)
+V.Local.sSelCut.Declare(String)
+V.Local.sDelete.Declare(String)
+V.Local.sSchedule.Declare(String)
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\SCHED.txt",V.Local.sLoadFile)
+'Nest ID,Nest Suffix, Increment, JOb, Suffix, Mat Seq, filler, Job, Suffix, Lab Seq, Beg Date, End Date, filler, wc, Part,Part Loc, sort orderm beginning due date, Ending Due Date
+
+	F.Intrinsic.String.LPad(V.Local.sFiller," ",3,V.Local.sFiller)
+		Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uWOS!Schedule_Suffix,"",V.uGlobal.uWOS!Schedule_Suffix,V.Local.sFiller)
+	F.Intrinsic.String.LPad(V.Local.sFiller," ",5,V.Local.sFiller)
+		Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uWOS!FillerA,"",V.uGlobal.uWOS!FillerA,V.Local.sFiller)
+	F.Intrinsic.String.LPad(V.Local.sFiller," ",25,V.Local.sFiller)
+		Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uWOS!FillerB,"",V.uGlobal.uWOS!FillerB,V.Local.sFiller)
+		Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uWOS!BegDueDate,"",V.uGlobal.uWOS!BegDueDate,"000000")
+		Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uWOS!EndDueDate,"",V.uGlobal.uWOS!EndDueDate,"999999")
+	F.Intrinsic.String.LPad(V.Local.sFiller," ",2,V.Local.sFiller)
+		Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uWOS!PartLoc,"",V.uGlobal.uWOS!PartLoc,V.Local.sFiller)
+'	F.Intrinsic.String.LPad(V.Local.sFiller,"0",3,V.Local.sFiller)
+'		Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uWOS!SortOrder,"",V.uGlobal.uWOS!SortOrder,V.Local.sFiller)
+
+'for every recod
+F.Intrinsic.Control.For(V.Local.iFor,V.uGlobal.uWOS.LBound,V.uGlobal.uWOS.UBound,1)
+	F.Intrinsic.String.LPad(V.uGlobal.uWOS(v.Local.iFor)!NestID,"0",6,V.uGlobal.uWOS(v.Local.iFor)!NestID)
+'	F.Intrinsic.String.LPad(V.uGlobal.uWOS(v.Local.iFor)!ScheduleSeq,"0",6,V.uGlobal.uWOS(v.Local.iFor)!ScheduleSeq)
+	F.Intrinsic.String.RPad(V.uGlobal.uWOS(v.Local.iFor)!MnORef," ",9,V.uGlobal.uWOS(v.Local.iFor)!MnORef)
+		F.Intrinsic.String.Left(V.uGlobal.uWOS(v.Local.iFor)!MnORef,6,V.uGlobal.uWOS(v.Local.iFor)!Job)
+		F.Intrinsic.String.Right(V.uGlobal.uWOS(v.Local.iFor)!MnORef,3,V.uGlobal.uWOS(v.Local.iFor)!Suffix)
+	F.Intrinsic.String.RPad(V.uGlobal.uWOS(v.Local.iFor)!PrdRef," ",20,V.uGlobal.uWOS(v.Local.iFor)!PrdRef)
+	F.Intrinsic.String.Format(V.uGlobal.uWOS(v.Local.iFor)!DateSchedFrm,"mmddyy",V.uGlobal.uWOS(v.Local.iFor)!BegDate)
+	F.Intrinsic.String.Format(V.uGlobal.uWOS(v.Local.iFor)!DateSchedFrm,"mmddyy",V.uGlobal.uWOS(v.Local.iFor)!EndDate)
+	F.Intrinsic.String.LPad(V.uGlobal.uWOS(v.Local.iFor)!SortOrder,"0",3,V.uGlobal.uWOS(v.Local.iFor)!SortOrder)
+'	F.Intrinsic.String.LPad(V.Local.sFiller," ",16,V.Local.sFiller)
+'	F.Intrinsic.String.Concat(V.Local.sFiller,V.uGlobal.uWOS(v.Local.iFor)!TagNo,V.uGlobal.uWOS(v.Local.iFor)!TagNo)
+'	F.Intrinsic.String.RPad(V.uGlobal.uWOS(v.Local.iFor)!TagNo," ",25,V.uGlobal.uWOS(v.Local.iFor)!FillerB)
+'if a new nest, get first job/suffix as parent
+	F.Intrinsic.Control.If(V.Local.sCurrentNest,<>,V.uGlobal.uWOS(v.Local.iFor)!NestID)
+		V.Local.sParentJob.Set(V.uGlobal.uWOS(v.Local.iFor)!Job)
+		V.Local.sParentSuffx.Set(V.uGlobal.uWOS(v.Local.iFor)!Suffix)
+'find highest seq for parent job/suffix
+		F.Intrinsic.String.Concat("select MAX(SEQ) as SEQ from JOB_OPERATIONS where JOB='",V.Local.sParentJob,"' and SUFFIX='",V.Local.sParentSuffx,"' and SEQ<'990000'",V.Local.sSel)
+		F.ODBC.Connection!con.OpenRecordsetRO("rstSel",V.Local.sSel)
+			F.Intrinsic.Control.If(V.ODBC.con!rstSel.EOF,=,False)
+				V.Local.iSeq.Set(V.ODBC.con!rstSel.FieldValTrim!SEQ)
+			F.Intrinsic.Control.EndIf
+		F.ODBC.con!rstSel.Close
+'set job header records for parent job/suffix
+		F.Intrinsic.String.Concat("update JOB_HEADER set SCHEDULE_DIR='0' where JOB='",V.uGlobal.uWOS(v.Local.iFor)!Job,"' and SUFFIX='",V.uGlobal.uWOS(v.Local.iFor)!Suffix,"'",V.local.sUpdate)
+		F.ODBC.Connection!con.Execute(V.Local.sUpdate)
+'delete any exiting linked sequences on parent job/suffix
+		F.Intrinsic.String.Concat("delete from JOB_OPERATIONS where JOB='",V.Local.sParentJob,"' and SUFFIX='",V.Local.sParentSuffx,"' and LMO='X'",V.Local.sUpdate)
+		F.ODBC.Connection!con.Execute(V.Local.sUpdate)
+		V.Local.sCurrentNest.Set(V.uGlobal.uWOS(v.Local.iFor)!NestID)
+
+	F.Intrinsic.Control.Else
+'set job header records for child jobs
+		F.Intrinsic.String.Concat("update JOB_HEADER set SCHEDULE_DIR='1',FILLER4='L' where JOB='",V.uGlobal.uWOS(v.Local.iFor)!Job,"' and SUFFIX='",V.uGlobal.uWOS(v.Local.iFor)!Suffix,"'",V.local.sUpdate)
+		F.ODBC.Connection!con.Execute(V.Local.sUpdate)
+'create link seq on parent job/suffix operations
+		F.Intrinsic.String.Concat(V.uGlobal.uWOS(v.Local.iFor)!Job,V.uGlobal.uWOS(v.Local.iFor)!Suffix,V.Local.sChildJob)
+		F.Intrinsic.Math.Add(V.Local.iSeq,100,V.Local.iSeq)
+		F.Intrinsic.String.LPad(V.Local.iSeq,"0",6,V.Local.sSeq)
+
+		F.Intrinsic.String.Concat("select JOB,SUFFIX,SEQ,PART,LMO,WO_INSERT from JOB_OPERATIONS where JOB='",V.Local.sParentJob,"' and SUFFIX='",V.Local.sParentSuffx,"'",V.Local.sJobOp)
+		F.ODBC.Connection!con.OpenRecordsetRW("rstJobOp",V.Local.sJobOp)
+			F.ODBC.con!rstJobOp.AddNew
+				F.ODBC.con!rstJobOp.Set!JOB(V.Local.sParentJob)
+				F.ODBC.con!rstJobOp.Set!SUFFIX(V.Local.sParentSuffx)
+				F.ODBC.con!rstJobOp.Set!SEQ(V.Local.sSeq)
+				F.ODBC.con!rstJobOp.Set!PART(V.Local.sChildJob)
+				F.ODBC.con!rstJobOp.Set!LMO("X")
+				F.ODBC.con!rstJobOp.Set!WO_INSERT("00")
+			F.ODBC.Con!rstJobOp.Update
+		F.ODBC.con!rstJobOp.Close
+
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.String.Concat("select * from JOB_CT_FLX_SCHD where SCHEDULE='",V.uGlobal.uWOS(v.Local.iFor)!Schedule,"' and SCHEDULE_SUFFIX='",V.uGlobal.uWOS(v.Local.iFor)!Schedule_Suffix,"' and JOB='",V.uGlobal.uWOS(v.Local.iFor)!Job,"' and SUFFIX='",V.uGlobal.uWOS(v.Local.iFor)!Suffix,"'",V.Local.sSelCut)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstCut",V.Local.sSelCut)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstCut.EOF,=,True)
+			F.Intrinsic.Control.If(V.Local.sLoadData.Trim,=,"")
+				F.Intrinsic.String.Concat(V.uGlobal.uWOS(v.Local.iFor)!Schedule,V.uGlobal.uWOS(v.Local.iFor)!Schedule_Suffix,V.uGlobal.uWOS(v.Local.iFor)!ScheduleSeq,V.uGlobal.uWOS(v.Local.iFor)!Job,V.uGlobal.uWOS(v.Local.iFor)!Suffix,V.Local.sLoadData)
+				F.Intrinsic.String.Concat(V.Local.sLoadData,V.uGlobal.uWOS(v.Local.iFor)!MatlSeq,V.uGlobal.uWOS(v.Local.iFor)!FillerA,V.uGlobal.uWOS(v.Local.iFor)!Job,V.uGlobal.uWOS(v.Local.iFor)!Suffix,V.uGlobal.uWOS(v.Local.iFor)!LaborSeq,V.Local.sLoadData)
+				F.Intrinsic.String.Concat(V.Local.sLoadData,V.uGlobal.uWOS(v.Local.iFor)!BegDate,V.uGlobal.uWOS(v.Local.iFor)!EndDate,V.uGlobal.uWOS(v.Local.iFor)!FillerB,V.uGlobal.uWOS(v.Local.iFor)!WC,V.uGlobal.uWOS(v.Local.iFor)!PrdRef,V.Local.sLoadData)
+				F.Intrinsic.String.Concat(V.Local.sLoadData,V.uGlobal.uWOS(v.Local.iFor)!PartLoc,V.uGlobal.uWOS(v.Local.iFor)!SortOrder,V.uGlobal.uWOS(v.Local.iFor)!BegDueDate,V.uGlobal.uWOS(v.Local.iFor)!EndDueDate,V.Local.sLoadData)
+
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Concat(V.Local.sLoadData,V.Ambient.NewLine,V.uGlobal.uWOS(v.Local.iFor)!Schedule,V.uGlobal.uWOS(v.Local.iFor)!Schedule_Suffix,V.uGlobal.uWOS(v.Local.iFor)!ScheduleSeq,V.uGlobal.uWOS(v.Local.iFor)!Job,V.uGlobal.uWOS(v.Local.iFor)!Suffix,V.Local.sLoadData)
+				F.Intrinsic.String.Concat(V.Local.sLoadData,V.uGlobal.uWOS(v.Local.iFor)!MatlSeq,V.uGlobal.uWOS(v.Local.iFor)!FillerA,V.uGlobal.uWOS(v.Local.iFor)!Job,V.uGlobal.uWOS(v.Local.iFor)!Suffix,V.uGlobal.uWOS(v.Local.iFor)!LaborSeq,V.Local.sLoadData)
+				F.Intrinsic.String.Concat(V.Local.sLoadData,V.uGlobal.uWOS(v.Local.iFor)!BegDate,V.uGlobal.uWOS(v.Local.iFor)!EndDate,V.uGlobal.uWOS(v.Local.iFor)!FillerB,V.uGlobal.uWOS(v.Local.iFor)!WC,V.uGlobal.uWOS(v.Local.iFor)!PrdRef,V.Local.sLoadData)
+				F.Intrinsic.String.Concat(V.Local.sLoadData,V.uGlobal.uWOS(v.Local.iFor)!PartLoc,V.uGlobal.uWOS(v.Local.iFor)!SortOrder,V.uGlobal.uWOS(v.Local.iFor)!BegDueDate,V.uGlobal.uWOS(v.Local.iFor)!EndDueDate,V.Local.sLoadData)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstCut.Close
+
+F.Intrinsic.Control.Next(V.Local.iFor)
+F.Intrinsic.File.String2File(V.Local.sLoadFile,V.Local.sLoadData)
+F.Global.General.CallWrappersync(6000,"NS!*!52")
+
+F.Intrinsic.Control.For(V.Local.iFor,V.uGlobal.uWOS!Schedule.LBound,V.uGlobal.uWOS!Schedule.UBound,1)
+	F.Intrinsic.String.Concat("update JOB_CT_FLX_SCHD set TAG_NO='",V.uGlobal.uWOS(v.Local.iFor)!TagNo,"' where SCHEDULE='",V.uGlobal.uWOS(v.Local.iFor)!Schedule,"' and SCHEDULE_SUFFIX='",V.uGlobal.uWOS!Schedule_Suffix,"' and SCHEDULE_SEQ='",V.uGlobal.uWOS(v.Local.iFor)!ScheduleSeq,"'",V.Local.sUpdate)
+	F.ODBC.Connection!Con.Execute(V.Local.sUpdate)
+
+	F.Intrinsic.String.Concat("update ATG_XTRA_WOUF set Task ='",V.uGlobal.uWOS(v.Local.iFor)!TagNo,"' where Job='",V.uGlobal.uWOS(v.Local.iFor)!Job,"' and Suffix='",V.uGlobal.uWOS(v.Local.iFor)!Suffix,"'",V.Local.sUpdate)
+	F.ODBC.Connection!Con.Execute(V.Local.sUpdate)
+
+	F.Intrinsic.String.Concat("select Job, Suffix,User_1 from WO_User_Flds  where Job='",V.uGlobal.uWOS(v.Local.iFor)!Job,"' and Suffix='",V.uGlobal.uWOS(v.Local.iFor)!Suffix,"'",V.Local.sUpdate)
+	F.ODBC.Connection!Con.OpenRecordsetRW("rstWO",V.Local.sUpdate)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstWO.EOF,=,True)
+			F.ODBC.Con!rstWO.AddNew
+				F.ODBC.Con!rstWO.Set!JOB(V.uGlobal.uWOS(v.Local.iFor)!Job)
+				F.ODBC.Con!rstWO.Set!Suffix(V.uGlobal.uWOS(v.Local.iFor)!Suffix)
+		F.Intrinsic.Control.EndIf
+				F.ODBC.Con!rstWO.Set!User_1(V.uGlobal.uWOS(v.Local.iFor)!TagNo)
+			F.ODBC.Con!rstWO.Update
+	F.ODBC.Con!rstWO.Close
+
+'moving to Mat Issue In
+'	F.Intrinsic.String.Concat("select PART,DATE_DUE from V_Job_Operations where Job='",V.uGlobal.uWOS(v.Local.iFor)!Job,"' and Suffix='",V.uGlobal.uWOS(v.Local.iFor)!Suffix,"' and Seq='",V.uGlobal.uWOS(v.Local.iFor)!LaborSeq,"'",V.Local.sSchedule)
+'	F.ODBC.Connection!Con.OpenRecordsetRW("rstSchedule",V.Local.sSchedule)
+'		F.Intrinsic.Control.If(V.ODBC.Con!rstSchedule.EOF,=,False)
+'			F.Intrinsic.Control.If(V.ODBC.Con!rstSchedule.FieldValTrim!PART,<>,V.uGlobal.uWOS(v.Local.iFor)!WC)
+'				F.Intrinsic.String.Concat("update Job_Operations set PART='",V.uGlobal.uWOS(v.Local.iFor)!WC,"' where Job='",V.uGlobal.uWOS(v.Local.iFor)!Job,"' and Suffix='",V.uGlobal.uWOS(v.Local.iFor)!Suffix,"' and Seq='",V.uGlobal.uWOS(v.Local.iFor)!LaborSeq,"'",V.Local.sUpdate)
+'				F.ODBC.Connection!Con.Execute(V.Local.sUpdate)
+'				F.Global.APS.ScheduleJob(V.uGlobal.uWOS(v.Local.iFor)!Job,V.uGlobal.uWOS(v.Local.iFor)!Suffix,"B",V.ODBC.Con!rstSchedule.FieldValTrim!Date_Due)
+'			F.Intrinsic.Control.EndIf
+'		F.Intrinsic.Control.EndIf
+'	F.ODBC.Con!rstSchedule.Close
+
+F.Intrinsic.Control.Next(V.Local.iFor)
+
+
+Program.Sub.LoadSchedule.End
+
+
+
