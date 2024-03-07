@@ -1,0 +1,253 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("")
+gui.Form1..size(3120,1140)
+gui.Form1..position(0,0)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.lbl1.create(label,"Creating xml file.",True,2490,255,1,200,200,True,2,Arial,10,-2147483633,0)
+gui.Form1.lbl1.fontstyle(True,False,False,False)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: JCT
+'Project Start Date: 06/10/2011
+'Shop Floor>Administration>Delete Work Orders
+'hook 16080,16081
+'v.passed.000035=job
+'v.passed.000017=suffix
+
+V.Local.sFilePath.Declare(String)
+V.Local.sFileName.Declare(String)
+V.Local.sHold.Declare(String)
+V.Local.sret.Declare(String)
+V.Local.sPeriodStartDate.Declare(String)
+V.Local.sPeriodEndDate.Declare(String)
+V.Local.sJob.Declare(String)
+V.Local.sSuffix.Declare(String)
+V.Local.sType.Declare(String)
+V.Local.sStartDateTime.Declare(String)
+V.Local.sEndDateTime.Declare(String)
+V.Local.sDuration.Declare(String)
+V.Local.sTimeA.Declare(String)
+V.Local.sTimeB.Declare(String)
+V.Local.sSel.Declare(String)
+V.Local.sRunDate.Declare(String)
+V.Local.sRunTime.Declare(String)
+V.Local.sHours.Declare(String)
+V.Local.sMinutes.Declare(String)
+V.Local.sSeconds.Declare(String)
+V.Local.sValue.Declare(String)
+V.Local.sData.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.bExists.Declare(Boolean)
+V.Local.bEOF.Declare(Boolean)
+V.Local.sDatetime.Declare(String)
+
+'on pre-save, verify the job is one that was sent to Lantek
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+F.Intrinsic.Control.If(V.Caller.Hook,=,16080)
+	F.Intrinsic.Control.CallSub(Verifyjob)
+F.Intrinsic.Control.Else
+
+'***********************added if for the delete switch (“D”)****************************************
+	F.Intrinsic.Control.If(V.Caller.Switches,=,"D")
+		'see if Lantek file was created.
+		F.Intrinsic.String.Concat(V.System.Temp,"\LantekDelete.txt",V.Local.sfile)
+			F.Intrinsic.File.Exists(V.Local.sFile,V.Local.bExists)
+				F.Intrinsic.Control.If(V.Local.bExists,=,False)
+					F.Intrinsic.Control.CallSub(Unload)
+				F.Intrinsic.Control.EndIf
+		F.Intrinsic.File.File2String(V.Local.sFile,V.Local.sData)
+			F.Intrinsic.String.Replace(V.Local.sData,"*!*","",V.Local.sJob)
+
+		Gui.Form1..Show
+
+		F.Intrinsic.String.Concat(V.Ambient.Date.pervasivedate,V.Ambient.Time,V.Local.sdatetime)
+		F.Intrinsic.String.StripCharacters(V.Local.sdatetime,V.Local.sdatetime)
+		'V.Local.sFileName.Set("WO_Delete.xml")
+		F.Intrinsic.String.Concat("WO_",V.Local.sJob.Trim,"_",V.Local.sDatetime,".xml",V.Local.sFileName)
+		F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\WorkOrderOut\",V.Local.sFilePath)
+		F.global.xml.createDocument("xmlDoc",False,True,False,False)
+		'F.Intrinsic.UI.InvokeWaitDialog("Creating XML file.")
+		'set root node
+		F.global.xml.SetRoot("xmlDoc","DATAEX")
+		F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+		F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+		''----------------------------------------------------------------------------------------------------------------------------------------
+		F.Intrinsic.Control.CallSub(Delete)
+		'
+		''----------------------------------------------------------------------------------------------------------------------------------------
+		F.global.xml.appendTextNode("xmlDoc","root",V.Ambient.NewLine)
+		'Saves document
+		F.global.xml.saveDocument("xmlDoc",V.Local.sFilePath,V.Local.sFileName)
+		'closes document
+		F.global.xml.CloseDocument("xmlDoc")
+	F.Intrinsic.Control.EndIf
+
+'F.Intrinsic.UI.CloseWaitDialog
+'F.Intrinsic.UI.Msgbox("Create Completed")
+'
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.CallSub(Unload)
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+
+
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.end
+
+Program.Sub.Unload.EndProgram.Sub.Main.End
+
+Program.Sub.Delete.Start
+V.Local.sHold.Declare(String)
+V.Local.sJob.Declare(String)
+V.Local.sSelOps.Declare(String)
+V.Local.sSelWC.Declare(String)
+V.Local.sWCString.Declare(String)
+V.Local.sFieldRef.Declare(String)
+V.Local.sFiedlValue.Declare(String)
+V.Local.sFldType.Declare(String)
+V.Local.iFor.Declare(Long)
+V.Local.iForB.Declare(Long)
+V.Local.sOnhold.Declare(String)
+V.Local.sLocked.Declare(String)
+V.Local.sMatIsued.Declare(String)
+V.Local.sRunUnattend.Declare(String)
+V.Local.smustnest.Declare(String)
+V.Local.sSinglePrg.declare(String)
+V.Local.sHoist.Declare(String)
+V.Local.sRevDate.Declare(String)
+V.Local.sRelDate.Declare(String)
+V.Local.sDDate.Declare(String)
+V.Local.sSeqDate.Declare(String)
+V.Local.sComName.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.sData.Declare(String)
+
+'F.Intrinsic.String.Concat(V.Passed.000035,"-",V.Passed.000017,V.Local.sJob)
+F.Intrinsic.String.Concat(V.System.Temp,"\LantekDelete.txt",V.Local.sfile)
+F.Intrinsic.File.File2String(V.Local.sFile,V.Local.sData)
+	F.Intrinsic.String.Replace(V.Local.sData,"*!*","",V.Local.sJob)
+		
+
+'create node
+F.global.xml.createElementNode("xmlDoc","COMMAND","")
+	F.global.xml.createAttributeNode("xmlDoc","Name","DELETE")
+	F.global.xml.createAttributeNode("xmlDoc","TblRef","MANUFACTURING")
+
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","Name")
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","TblRef")
+
+	F.Global.XML.DestroyNode("xmlDoc","Name")
+	F.Global.XML.DestroyNode("xmlDoc","TblRef")
+
+F.global.xml.createElementNode("xmlDoc","CONDITIONS","")
+	F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","COMMAND","CONDITIONS")
+
+F.global.xml.createElementNode("xmlDoc","CONDITION","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITIONS",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITIONS","CONDITION")
+
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+
+F.global.xml.createElementNode("xmlDoc","FIELD","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","FIELD",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITION","FIELD")
+		F.global.xml.createAttributeNode("xmlDoc","FldRef","MnOID")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","Fldref")
+		F.Global.XML.DestroyNode("xmlDoc","FldRef")
+F.global.xml.destroyNode("xmlDoc","FIELD")
+
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+F.global.xml.createElementNode("xmlDoc","EQUAL","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","EQUAL",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITION","EQUAL")
+F.global.xml.destroyNode("xmlDoc","EQUAL")
+
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+
+F.global.xml.createElementNode("xmlDoc","CONSTANT","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","CONSTANT",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITION","CONSTANT")
+
+		F.global.xml.createAttributeNode("xmlDoc","Value",V.Local.sJob)
+		F.global.xml.createAttributeNode("xmlDoc","Type","20")
+			F.Global.XML.SetAttributeToNode("xmlDoc","CONSTANT","Value")
+			F.Global.XML.SetAttributeToNode("xmlDoc","CONSTANT","Type")
+		F.Global.XML.DestroyNode("xmlDoc","Value")
+		F.Global.XML.DestroyNode("xmlDoc","Tpe")
+F.global.xml.destroyNode("xmlDoc","CONSTANT")
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+F.global.xml.destroyNode("xmlDoc","CONDITION")
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITIONS",V.Local.sHold)
+
+	F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+F.global.xml.destroyNode("xmlDoc","CONDITIONS")
+
+F.global.xml.appendNodeToRoot("xmlDoc","COMMAND")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+
+F.global.xml.appendTextNode("xmlDoc","COMMAND",V.Local.shold)
+F.global.xml.destroyNode("xmlDoc","COMMAND")
+
+Program.Sub.Delete.End
+
+Program.Sub.VerifyJob.Start
+
+V.Local.sSel.Declare(String)
+V.Local.sjob.Declare(String)
+V.Local.sSuffix.Declare(String)
+V.Local.sfile.Declare(String)
+V.Local.sData.Declare(String)
+V.Local.bExists.Declare(Boolean)
+
+
+F.Intrinsic.String.Concat(V.System.Temp,"\LantekDelete.txt",V.Local.sfile)
+	F.Intrinsic.File.Exists(V.Local.sfile,V.Local.bExists)
+		F.Intrinsic.Control.If(V.Local.bExists,=,True)
+			F.Intrinsic.File.DeleteFile(V.Local.sfile)
+		F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Concat("select PART from JOB_OPERATIONS inner join V_WORKCENTERS on JOB_OPERATIONS.PART=V_WORKCENTERS.MACHINE where JOB='",V.Passed.000035,"' and SUFFIX='",V.Passed.000017,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		F.Intrinsic.String.Concat(V.Passed.000035,"*!*",V.Passed.000017,V.Local.sData)
+		F.Intrinsic.File.String2File(V.Local.sfile,V.Local.sData)
+	F.Intrinsic.Control.endif
+F.ODBC.Con!rstSel.Close
+
+
+F.Intrinsic.Control.CallSub(Unload)
+
+Program.Sub.VerifyJob.End
+
+
