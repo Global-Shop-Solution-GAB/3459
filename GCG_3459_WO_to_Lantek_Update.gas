@@ -1,0 +1,510 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("")
+gui.Form1..size(3120,1140)
+gui.Form1..position(0,0)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.lbl1.create(label,"Creating xml file.",True,2490,255,1,200,200,True,2,Arial,10,-2147483633,0)
+gui.Form1.lbl1.fontstyle(True,False,False,False)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+
+Variable.UDT.JOB.Define("PrdRef",String,"ROUTER")
+Variable.UDT.JOB.Define("MatRef",String)
+Variable.UDT.JOB.Define("Height",Float)
+Variable.UDT.JOB.Define("Length",Float)
+Variable.UDT.JOB.Define("Width",Float)
+Variable.UDT.JOB.Define("PrdRefDst",String)
+Variable.UDT.JOB.Define("WrkRef",String,"WC")
+Variable.UDT.JOB.Define("OprRef",String,"OPERATION")
+Variable.UDT.JOB.Define("Job",String,"JOB")
+Variable.UDT.JOB.Define("Suffix",String,"SUFFIX")
+Variable.UDT.JOB.Define("MnOID",String)
+Variable.UDT.JOB.Define("RQ",String,"UNITS_OPEN")
+Variable.UDT.JOB.Define("OrdRef",String,"CUSTOMER_PO")
+Variable.UDT.JOB.Define("ComName",String,"CUSTOMER")
+Variable.UDT.JOB.Define("DDate",string,"DATE_START")
+Variable.UDT.JOB.Define("USR_OnHold",String,"FLAG_HOLD")
+Variable.UDT.JOB.Define("USR_Locked",String,"JOB_LOCKED")
+Variable.UDT.JOB.Define("USR_Priority",String,"PRIORITY")
+Variable.UDT.JOB.Define("USR_MatSeqNum",String)
+Variable.UDT.JOB.Define("USR_LaserSeqNum",String,"SEQ")
+Variable.UDT.JOB.Define("USR_MatSeqDate",Date)
+Variable.UDT.JOB.Define("USR_MatPartNum",String)
+Variable.UDT.JOB.Define("USR_MatDesc",String)
+Variable.UDT.JOB.Define("USR_LaserWC",String,"WC_Description")
+Variable.UDT.JOB.Define("USR_AmountNoUnits",Float)
+Variable.UDT.JOB.Define("USR_LaserSetupTime",String,"SETUP")
+Variable.UDT.JOB.Define("USR_MatUsagePiece",Float)
+Variable.UDT.JOB.Define("USR_LaserTimePiece",Float,"UNITS")
+Variable.UDT.JOB.Define("USR_TotMatUsage",Float)
+Variable.UDT.JOB.Define("USR_TotLaserTime",Float,"HOURS_ESTIMATED")
+Variable.UDT.JOB.Define("USR_MatIssued",string)
+Variable.UDT.JOB.Define("USR_NextLabSeq",String)
+Variable.UDT.JOB.Define("USR_NextLabWrk",String)
+Variable.UDT.JOB.Define("USR_MatRevDate",Date)
+Variable.UDT.JOB.Define("USR_MatRelDate",Date)
+Variable.UDT.JOB.Define("USR_RunUnattended",String)
+Variable.UDT.JOB.Define("USR_MustNest",String)
+Variable.UDT.JOB.Define("USR_SingleProg",String)
+Variable.UDT.JOB.Define("USR_HoistNeeded",String)
+Variable.UDT.JOB.Define("USR_BendRadius",String)
+Variable.UDT.JOB.Define("UM",String)
+Variable.UDT.JOB.Define("CODE_SORT",String)
+Variable.UDT.JOB.Define("FREQUENCY",float)
+Variable.UDT.JOB.Define("Extra",float)
+Variable.uGlobal.uJob.Declare("JOB")
+
+Variable.UDT.WC.Define("MACHINE",String,"MACHINE")
+Variable.uGlobal.uMach.Declare("WC")
+
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: JCT
+'Project Start Date: 06/10/2011
+'SF>File>WO>New
+'hook 16800
+'v.passed.009000=Job
+'v.passed.009001=Suffix
+'Caller Switches:
+'1: Update
+'2:Add
+'3:Copy
+'4:Order
+'5:AutoEDI
+'6:WhatIf
+'7:WhatIfCope
+'8:Auto
+'9:View
+
+'if not an update, then end program
+F.Intrinsic.Control.If(V.Caller.Switches,<>,"1")
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.Endif
+
+
+V.Local.sFilePath.Declare(String)
+V.Local.sFileName.Declare(String)
+V.Local.sHold.Declare(String)
+V.Local.sret.Declare(String)
+V.Local.sPeriodStartDate.Declare(String)
+V.Local.sPeriodEndDate.Declare(String)
+V.Local.sEmployee.Declare(String)
+V.Local.sType.Declare(String)
+V.Local.sStartDateTime.Declare(String)
+V.Local.sEndDateTime.Declare(String)
+V.Local.sDuration.Declare(String)
+V.Local.sTimeA.Declare(String)
+V.Local.sTimeB.Declare(String)
+V.Local.sSel.Declare(String)
+V.Local.sRunDate.Declare(String)
+V.Local.sRunTime.Declare(String)
+V.Local.sHours.Declare(String)
+V.Local.sMinutes.Declare(String)
+V.Local.sSeconds.Declare(String)
+V.Local.sValue.Declare(String)
+V.Local.sDatetime.Declare(String)
+V.Local.bEOF.Declare(Boolean)
+'
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.Intrinsic.Control.CallSub(Verifyjob)
+'V.Local.sFileName.Set("WO_Update.xml")
+'F.Intrinsic.String.Concat(V.Ambient.Date.pervasivedate,V.Ambient.Time,V.Local.sdatetime)
+'F.Intrinsic.String.StripCharacters(V.Local.sdatetime,V.Local.sdatetime)
+'F.Intrinsic.String.Concat("WO_",V.Passed.009000,V.Passed.009001,"_",V.Local.sdatetime,".xml",V.Local.sFileName)
+'F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\WorkOrderOut\",V.Local.sFilePath)
+'F.global.xml.createDocument("xmlDoc",False,True,False,False)
+''F.Intrinsic.UI.InvokeWaitDialog("Creating XML file.")
+''set root node
+'F.global.xml.SetRoot("xmlDoc","DATAEX")
+'F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+'F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+''----------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.CallSub(Update)
+'
+''----------------------------------------------------------------------------------------------------------------------------------------
+'F.global.xml.appendTextNode("xmlDoc","root",V.Ambient.NewLine)
+''Saves document
+'F.global.xml.saveDocument("xmlDoc",V.Local.sFilePath,V.Local.sFileName)
+''closes document
+'F.global.xml.CloseDocument("xmlDoc")
+
+''F.Intrinsic.UI.CloseWaitDialog
+''F.Intrinsic.UI.Msgbox("Create Completed")
+
+
+F.Intrinsic.Control.CallSub(Unload)
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+
+
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.end
+
+Program.Sub.Unload.EndProgram.Sub.Main.End
+
+Program.Sub.Update.Start
+V.Local.sHold.Declare(String)
+V.Local.sJob.Declare(String)
+V.Local.sSelOps.Declare(String)
+V.Local.sSelWC.Declare(String)
+V.Local.sWCString.Declare(String)
+V.Local.sFieldRef.Declare(String)
+V.Local.sFiedlValue.Declare(String)
+V.Local.sFldType.Declare(String)
+V.Local.iFor.Declare(Long)
+V.Local.iForB.Declare(Long)
+V.Local.sOnhold.Declare(String)
+V.Local.sLocked.Declare(String)
+V.Local.sMatIsued.Declare(String)
+V.Local.sRunUnattend.Declare(String)
+V.Local.smustnest.Declare(String)
+V.Local.sSinglePrg.declare(String)
+V.Local.sHoist.Declare(String)
+V.Local.sRevDate.Declare(String)
+V.Local.sRelDate.Declare(String)
+V.Local.sDDate.Declare(String)
+V.Local.sSeqDate.Declare(String)
+V.Local.sComName.Declare(String)
+V.Local.sMsg.Declare(String)
+V.Local.sdatetime.Declare(String)
+V.Local.sfilename.Declare(String)
+V.Local.sfilepath.Declare(String)
+
+'get list of applicable workcenters
+F.ODBC.Connection!Con.OpenRecordsetRO("rstWC","select distinct MACHINE from V_WORKCENTERS where NESTING_INTRFC ='Y' ")
+	F.Intrinsic.Control.If(V.ODBC.Con!rstWC.EOF,=,False)
+		F.Intrinsic.Variable.LoadUDTFromRecordset("Con","rstWC","v.uGlobal.uMach",False,0)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstWC.Close
+
+V.uGlobal.uJob.Redim(-1,-1)
+'for each workcnter; get job information for jobs that use that workcenter.
+F.Intrinsic.Control.For(V.Local.iFor,V.uGlobal.uMach!MACHINE.LBound,V.uGlobal.uMach!MACHINE.UBound,1)
+	F.Intrinsic.String.Concat("select distinct JOB_HEADER.JOB,JOB_HEADER.SUFFIX,JOB_HEADER.CUSTOMER_PO,JOB_HEADER.CUSTOMER,JOB_HEADER.ROUTER,JOB_HEADER.FLAG_HOLD,JOB_HEADER.JOB_LOCKED,JOB_HEADER.PRIORITY,","",V.Local.sSelOps)
+	F.Intrinsic.String.Concat(V.Local.sSelOps," V_JOB_OPERATIONS.SEQ,V_JOB_OPERATIONS.DATE_START,V_JOB_OPERATIONS.PART as WC,V_JOB_OPERATIONS.DESCRIPTION as WC_DESCRIPTION,V_JOB_OPERATIONS.OPERATION,V_JOB_OPERATIONS.SETUP,V_JOB_OPERATIONS.UNITS,V_JOB_OPERATIONS.HOURS_ESTIMATED,V_JOB_OPERATIONS.UNITS_OPEN",V.Local.sSelOps)
+	F.Intrinsic.String.Concat(V.Local.sSelOps," from JOB_HEADER inner join V_JOB_OPERATIONS on JOB_HEADER.JOB=V_JOB_OPERATIONS.JOB and JOB_HEADER.SUFFIX=V_JOB_OPERATIONS.SUFFIX ",V.Local.sSelOps)
+	F.Intrinsic.String.Concat(V.Local.sSelOps," where JOB_HEADER.JOB='",V.Passed.009000,"' and JOB_HEADER.SUFFIX='",V.Passed.009001,"' and JOB_HEADER.JOB_LOCKED<>'Y' and JOB_HEADER.FLAG_HOLD<>'Y' and  ",V.Local.sSelOps)
+	F.Intrinsic.String.Concat(V.Local.sSelOps," V_JOB_OPERATIONS.LMO='L' and V_JOB_OPERATIONS.FLAG_CLOSED<>'Y' and V_JOB_OPERATIONS.PART='",V.uGlobal.uMach(v.Local.iFor)!MACHINE,"'",V.Local.sSelOps)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstJobOps",V.Local.sSelOps)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstJobOps.EOF,=,False)
+			F.Intrinsic.Variable.LoadUDTFromRecordset("Con","rstJobOps","v.uGlobal.uJOB",True,0)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstJobOps.Close
+F.Intrinsic.Control.Next(V.Local.iFor)
+
+'if no jobs are found, exit the sub
+F.Intrinsic.Control.If(V.uGlobal.uJob!Job.UBound,<,0)
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.endif
+
+Gui.Form1..Show
+F.Intrinsic.String.Concat(V.Ambient.Date.pervasivedate,V.Ambient.Time,V.Local.sdatetime)
+F.Intrinsic.String.StripCharacters(V.Local.sdatetime,V.Local.sdatetime)
+F.Intrinsic.String.Concat("WO_",V.Passed.009000,V.Passed.009001,"_",V.Local.sdatetime,".xml",V.Local.sFileName)
+F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\WorkOrderOut\",V.Local.sFilePath)
+F.global.xml.createDocument("xmlDoc",False,True,False,False)
+'F.Intrinsic.UI.InvokeWaitDialog("Creating XML file.")
+'set root node
+F.global.xml.SetRoot("xmlDoc","DATAEX")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+'----------------------------------------------------------------------------------------------------------------------------------------
+
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_OnHold,"N",V.uGlobal.uJob!USR_OnHold,"0")
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_Locked,"N",V.uGlobal.uJob!USR_Locked,"0")
+
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_OnHold,"",V.uGlobal.uJob!USR_OnHold,"0")
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_Locked,"",V.uGlobal.uJob!USR_Locked,"0")
+
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_OnHold,"Y",V.uGlobal.uJob!USR_OnHold,"1")
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_Locked,"Y",V.uGlobal.uJob!USR_Locked,"1")
+'get additional job information for material and "next" sequences
+F.Intrinsic.Control.For(V.Local.iFor,V.uGlobal.uJob!JOB.LBound,V.uGlobal.uJob!JOB.UBound,1)
+'Material seq
+'	F.Intrinsic.String.Concat("select SEQ,DATE_START,PART,DESCRIPTION,SETUP,HOURS_ESTIMATED,FLAG_CLOSED,UNITS,UM,CODE_SORT_OPER, FREQUENCY  from V_JOB_OPERATIONS where LMO='M' and JOB='",V.uGlobal.uJob(v.Local.iFor)!JOB,"' and SUFFIX='",V.uGlobal.uJob(v.Local.iFor)!SUFFIX,"' and SEQ<'",V.uGlobal.uJob(v.Local.iFor)!USR_LaserSeqNum,"'",V.Local.sSelOps)
+	F.Intrinsic.String.Concat("select SEQ,DATE_START,PART,DESCRIPTION,SETUP,HOURS_ESTIMATED,FLAG_CLOSED,UNITS,UM,CODE_SORT_OPER, FREQUENCY  from V_JOB_OPERATIONS where LMO='M' and JOB='",V.uGlobal.uJob(v.Local.iFor)!JOB,"' and SUFFIX='",V.uGlobal.uJob(v.Local.iFor)!SUFFIX,"' and SEQ='000100' ",V.Local.sSelOps)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstJobOps",V.Local.sSelOps)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstJobOps.EOF,=,False)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatSeqNum.Set(V.ODBC.Con!rstJobOps.FieldValTrim!SEQ)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatSeqDate.Set(V.ODBC.Con!rstJobOps.FieldValTrim!DATE_START)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatPartNum.Set(V.ODBC.Con!rstJobOps.FieldValTrim!PART)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatDesc.Set(V.ODBC.Con!rstJobOps.FieldValTrim!DESCRIPTION)
+			V.uGlobal.uJob(v.Local.iFor)!USR_AmountNoUnits.Set(V.ODBC.Con!rstJobOps.FieldValTrim!SETUP)
+			V.uGlobal.uJob(v.Local.iFor)!USR_TotMatUsage.Set(V.ODBC.Con!rstJobOps.FieldValTrim!HOURS_ESTIMATED)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatIssued.Set(V.ODBC.Con!rstJobOps.FieldValTrim!FLAG_CLOSED)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatUsagePiece.Set(V.ODBC.Con!rstJobOps.FieldValTrim!UNITS)
+			V.uGlobal.uJob(v.Local.iFor)!UM.Set(V.ODBC.Con!rstJobOps.FieldValTrim!UM)
+			V.uGlobal.uJob(v.Local.iFor)!CODE_SORT.Set(V.ODBC.Con!rstJobOps.FieldValTrim!CODE_SORT_OPER)
+			V.uGlobal.uJob(v.Local.iFor)!FREQUENCY.Set(V.ODBC.Con!rstJobOps.FieldValTrim!FREQUENCY)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstJobOps.Close
+
+'calculate RQ
+	F.Intrinsic.Control.If(V.uGlobal.uJob(v.Local.iFor)!UM,=,"SH")
+'qty/frequency
+		F.Intrinsic.Math.Round(V.uGlobal.uJob(v.Local.iFor)!FREQUENCY,0,V.uGlobal.uJob(v.Local.iFor)!FREQUENCY)
+		F.Intrinsic.Control.If(V.uGlobal.uJob(v.Local.iFor)!FREQUENCY,>,0)
+			F.Intrinsic.Math.Div(V.uGlobal.uJob(v.Local.iFor)!RQ,V.uGlobal.uJob(v.Local.iFor)!FREQUENCY,V.uGlobal.uJob(v.Local.iFor)!FREQUENCY)
+		F.Intrinsic.Control.Else
+			V.uGlobal.uJob(v.Local.iFor)!FREQUENCY.Set(0)
+		F.Intrinsic.Control.EndIf
+'setup/units
+		F.Intrinsic.Control.If(V.uGlobal.uJob(v.Local.iFor)!USR_AmountNoUnits,>,0)
+		F.Intrinsic.Control.AndIf(V.uGlobal.uJob(v.Local.iFor)!USR_MatUsagePiece,>,0)
+			F.Intrinsic.Math.Div(V.uGlobal.uJob(v.Local.iFor)!USR_AmountNoUnits,V.uGlobal.uJob(v.Local.iFor)!USR_MatUsagePiece,V.uGlobal.uJob(v.Local.iFor)!Extra)
+		F.Intrinsic.Control.EndIf
+'extra * frequency
+		F.Intrinsic.Control.If(V.uGlobal.uJob(v.Local.iFor)!FREQUENCY,<>,0)
+			F.Intrinsic.Math.Mult(V.uGlobal.uJob(v.Local.iFor)!Extra,V.uGlobal.uJob(v.Local.iFor)!FREQUENCY,V.uGlobal.uJob(v.Local.iFor)!Extra)
+		F.Intrinsic.Control.EndIf
+'qty +extra
+		F.Intrinsic.Math.Add(V.uGlobal.uJob(v.Local.iFor)!RQ,V.uGlobal.uJob(v.Local.iFor)!Extra,V.uGlobal.uJob(v.Local.iFor)!RQ)
+	F.Intrinsic.Control.EndIf
+
+'next labor
+	F.Intrinsic.String.Concat("select SEQ,PART from JOB_OPERATIONS where LMO='L' and PART<>'DEBL' and JOB='",V.uGlobal.uJob(v.Local.iFor)!JOB,"' and SUFFIX='",V.uGlobal.uJob(v.Local.iFor)!SUFFIX,"' and SEQ>'",V.uGlobal.uJob(v.Local.iFor)!USR_LaserSeqNum,"'",V.Local.sSelOps)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstJobOps",V.Local.sSelOps)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstJobOps.EOF,=,False)
+			V.uGlobal.uJob(v.Local.iFor)!USR_NextLabSeq.Set(V.ODBC.Con!rstJobOps.FieldVal!SEQ)
+			V.uGlobal.uJob(v.Local.iFor)!USR_NextLabWrk.Set(V.ODBC.Con!rstJobOps.FieldValTrim!PART)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstJobOps.Close
+'atg_xtra_ruf
+	F.Intrinsic.String.Replace(V.uGlobal.uJob(v.Local.iFor)!WrkRef,"'","''",V.uGlobal.uJob(v.Local.iFor)!WrkRef)
+	F.Intrinsic.String.Concat("select RUN_UNATT,NEST,SINGLE_PROG,HOIST_NEEDED,BEND_RAD from ATG_XTRA_RUF where ROUTER='",V.uGlobal.uJob(v.Local.iFor)!WrkRef,"'",V.Local.sSelOps)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstJobOps",V.Local.sSelOps)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstJobOps.EOF,=,False)
+			V.uGlobal.uJob(v.Local.iFor)!USR_RunUnattended.Set(V.ODBC.Con!rstJobOps.FieldVal!RUN_UNATT)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MustNest.Set(V.ODBC.Con!rstJobOps.FieldVal!NEST)
+			V.uGlobal.uJob(v.Local.iFor)!USR_SingleProg.Set(V.ODBC.Con!rstJobOps.FieldVal!SINGLE_PROG)
+			V.uGlobal.uJob(v.Local.iFor)!USR_HoistNeeded.Set(V.ODBC.Con!rstJobOps.FieldVal!HOIST_NEEDED)
+			V.uGlobal.uJob(v.Local.iFor)!USR_BendRadius.Set(V.ODBC.Con!rstJobOps.FieldValTrim!BEND_RAD)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstJobOps.Close
+'atg_xtra_wouf
+	F.Intrinsic.String.Concat("select UF_D_15,UF_D_16 from ATG_XTRA_WOUF where JOB='",V.uGlobal.uJob(v.Local.iFor)!JOB,"'",V.Local.sSelOps)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstJobOps",V.Local.sSelOps)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstJobOps.EOF,=,False)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatRevDate.Set(V.ODBC.Con!rstJobOps.FieldVal!UF_D_15)
+			V.uGlobal.uJob(v.Local.iFor)!USR_MatRelDate.Set(V.ODBC.Con!rstJobOps.FieldVal!UF_D_16)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstJobOps.Close
+'ilt_nest_mat_code
+	F.Intrinsic.String.Replace(V.uGlobal.uJob(v.Local.iFor)!USR_MatPartNum,"'","''",V.uGlobal.uJob(v.Local.iFor)!USR_MatPartNum)
+	F.Intrinsic.String.Concat("select THICKNESS,PRODUCT_TYPE from ILT_NEST_MAT_CODE where PART='",V.uGlobal.uJob(v.Local.iFor)!USR_MatPartNum,"'",V.Local.sSelOps)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstJobOps",V.Local.sSelOps)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstJobOps.EOF,=,False)
+			V.uGlobal.uJob(v.Local.iFor)!Height.Set(V.ODBC.Con!rstJobOps.FieldVal!THICKNESS)
+			V.uGlobal.uJob(v.Local.iFor)!MatRef.Set(V.ODBC.Con!rstJobOps.FieldValTrim!PRODUCT_TYPE)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstJobOps.Close
+'shipment to
+	F.Intrinsic.String.Concat("select NAME_CUSTOMER_SHIP from V_CUSTOMER_SHIPTO where CUSTOMER='",V.uGlobal.uJob(v.Local.iFor)!ComName,"'",V.Local.sSelOps)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstJobOps",V.Local.sSelOps)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstJobOps.EOF,=,False)
+			V.Local.sComName.Set(V.ODBC.Con!rstJobOps.FieldVal!NAME_CUSTOMER_SHIP)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstJobOps.Close
+
+F.Intrinsic.Control.Next(V.Local.iFor)
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_MatIssued,"Y",V.uGlobal.uJob!USR_MatIssued,"1")
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_MatIssued,"N",V.uGlobal.uJob!USR_MatIssued,"0")
+	Function.Intrinsic.Variable.UDTMultiSeekSet(V.uGlobal.uJob!USR_MatIssued,"",V.uGlobal.uJob!USR_MatIssued,"0")
+
+'--------------------------------------------------------------------------------------------------
+'create array of field references
+	F.Intrinsic.String.Split("MnOID*!*PrdRefDst*!*WrkRef*!*RQ*!*Height*!*MatRef*!*OrdRef*!*ComName*!*DDate*!*USR_OnHold*!*USR_Locked*!*USR_Priority*!*USR_MatSeqNum*!*USR_LaserSeqNum*!*USR_MatSeqDate*!*USR_MatPartNum*!*USR_MatDesc*!*USR_LaserWC*!*USR_OprRef*!*USR_AmountNoUnits*!*USR_LaserSetupTime*!*USR_MatUsagePiece*!*USR_LaserTimePiece*!*USR_TotMatUsage*!*USR_TotLaserTime*!*USR_MatIssued*!*USR_NextLabSeq*!*USR_NextLabWrk*!*USR_MatRevDate*!*USR_MatRelDate*!*USR_RunUnattended*!*USR_MustNest*!*USR_SingleProg*!*USR_HoistNeeded*!*USR_BendRadius","*!*",V.Local.sFieldRef)
+'create array of fldtype
+	F.Intrinsic.String.Split("20*!*20*!*20*!*30*!*100*!*20*!*20*!*20*!*120*!*10*!*10*!*100*!*20*!*20*!*120*!*20*!*20*!*20*!*20*!*20*!*20*!*20*!*20*!*20*!*20*!*10*!*20*!*20*!*120*!*120*!*10*!*10*!*10*!*10*!*20","*!*",V.Local.sFldType)
+'loop for each element
+F.Intrinsic.Control.For(V.Local.iFor,V.uGlobal.uJob!JOB.LBound,V.uGlobal.uJob!JOB.UBound,1)
+
+'create node
+F.global.xml.createElementNode("xmlDoc","COMMAND","")
+	F.global.xml.createAttributeNode("xmlDoc","Name","UPDATE")
+	F.global.xml.createAttributeNode("xmlDoc","TblRef","MANUFACTURING")
+
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","Name")
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","TblRef")
+
+	F.Global.XML.DestroyNode("xmlDoc","Name")
+	F.Global.XML.DestroyNode("xmlDoc","TblRef")
+
+'get boolean values.  default to 0.
+V.Local.sOnhold.Set("0")
+V.Local.sLocked.Set("0")
+V.Local.sMatIsued.Set("0")
+V.Local.sRunUnattend.Set("0")
+V.Local.smustnest.Set("0")
+V.Local.sSinglePrg.Set("0")
+V.Local.sHoist.Set("0")
+
+	
+''format date values
+	F.Intrinsic.String.Format(V.uGlobal.uJob(v.Local.iFor)!DDate,"yyyymmdd",V.Local.sDDate)
+	F.Intrinsic.String.Format(V.uGlobal.uJob(v.Local.iFor)!USR_MatSeqDate,"yyyymmdd",V.Local.sSeqDate)
+		F.Intrinsic.Control.If(V.uGlobal.uJob(v.Local.iFor)!USR_MatRevDate,=,"")
+			V.Local.sRevDate.Set("19000101")
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Format(V.uGlobal.uJob(v.Local.iFor)!USR_MatRevDate,"yyyymmdd",V.Local.sRevDate)
+		F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.If(V.uGlobal.uJob(v.Local.iFor)!USR_MatRelDate,=,"")
+			V.Local.sRelDate.Set("19000101")
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Format(V.uGlobal.uJob(v.Local.iFor)!USR_MatRelDate,"yyyymmdd",V.Local.sRelDate)
+		F.Intrinsic.Control.EndIf
+
+'	F.Intrinsic.String.Concat("Job: ",V.uGlobal.uJob(v.Local.iFor)!JOB.Trim,V.Local.sMsg)
+'		F.Intrinsic.UI.Msgbox(V.Local.sMsg)
+'	F.Intrinsic.String.Concat("Suffix: ",V.uGlobal.uJob(v.Local.iFor)!SUFFIX.Trim,V.Local.sMsg)
+'		F.Intrinsic.UI.Msgbox(V.Local.sMsg)
+''combine job and suffix for formatting
+	F.Intrinsic.String.Concat(V.uGlobal.uJob(v.Local.iFor)!JOB.Trim,V.uGlobal.uJob(v.Local.iFor)!SUFFIX.Trim,V.Local.sJob)
+'combine Customer number,name
+	F.Intrinsic.String.Concat(V.uGlobal.uJob(v.Local.iFor)!ComName.Trim,",",V.Local.sComName.Trim,V.uGlobal.uJob(v.Local.iFor)!ComName)
+
+	F.Intrinsic.String.Concat(V.Local.sJob.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!PrdRef.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!WrkRef.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!RQ.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!Height.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!MatRef.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,"*!*",V.uGlobal.uJob(v.Local.iFor)!OrdRef.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!ComName.Trim,"*!*",V.Local.sDDate,"*!*",V.Local.sOnHold.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,"*!*",V.Local.sLocked.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_Priority.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_MatSeqNum.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_LaserSeqNum.Trim,"*!*",V.Local.sSeqDate.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_MatPartNum.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_MatDesc.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_LaserWC.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!OprRef.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_AmountNoUnits.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_LaserSetupTime.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_MatUsagePiece.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_LaserTimePiece.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_TotMatUsage.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_TotLaserTime.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_MatIssued.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_NextLabSeq.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_NextLabWrk.Trim,"*!*",V.Local.sRevDate.Trim,"*!*",V.Local.sRelDate.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,"*!*",V.Local.sRunUnattend.Trim,"*!*",V.Local.smustnest.Trim,"*!*",V.Local.sSinglePrg.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Concat(V.Local.sFiedlValue,"*!*",V.Local.sHoist.Trim,"*!*",V.uGlobal.uJob(v.Local.iFor)!USR_BendRadius.Trim,V.Local.sFiedlValue)
+	F.Intrinsic.String.Split(V.Local.sFiedlValue,"*!*",V.Local.sFiedlValue)
+	V.Local.sFiedlValue.RedimPreserve(0,36)
+
+'loop for each attribute
+	F.Intrinsic.Control.For(V.Local.iForB,V.Local.sFieldRef.LBound,V.Local.sFieldRef.UBound,1)
+
+	F.global.xml.createElementNode("xmlDoc","FIELD","")
+		F.global.xml.createAttributeNode("xmlDoc","FldRef",V.Local.sFieldRef(v.Local.iForB))
+		F.global.xml.createAttributeNode("xmlDoc","FldValue",V.Local.sFiedlValue(v.Local.iForB))
+		F.global.xml.createAttributeNode("xmlDoc","FldType",V.Local.sFldType(v.Local.iForB))
+
+
+		F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+		F.Global.XML.AppendNode("xmlDoc","COMMAND","FIELD")
+			F.Global.XML.AppendTextNode("xmlDoc","FIELD",V.Local.sHold)
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldRef")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldValue")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldType")
+
+		F.Global.XML.DestroyNode("xmlDoc","FldRef")
+		F.Global.XML.DestroyNode("xmlDoc","FldValue")
+		F.Global.XML.DestroyNode("xmlDoc","FldType")
+	F.global.xml.destroyNode("xmlDoc","FIELD")
+	F.Intrinsic.Control.Next(V.Local.iForB)
+
+
+'--------------------------------------------------------------------------------------------------
+'
+F.global.xml.createElementNode("xmlDoc","CONDITIONS","")
+	F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","COMMAND","CONDITIONS")
+
+F.global.xml.createElementNode("xmlDoc","CONDITION","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITIONS",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITIONS","CONDITION")
+
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+
+F.global.xml.createElementNode("xmlDoc","FIELD","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","FIELD",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITION","FIELD")
+		F.global.xml.createAttributeNode("xmlDoc","FldRef","MnOID")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","Fldref")
+		F.Global.XML.DestroyNode("xmlDoc","FldRef")
+F.global.xml.destroyNode("xmlDoc","FIELD")
+
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+F.global.xml.createElementNode("xmlDoc","EQUAL","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","EQUAL",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITION","EQUAL")
+F.global.xml.destroyNode("xmlDoc","EQUAL")
+
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+
+F.global.xml.createElementNode("xmlDoc","CONSTANT","")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","CONSTANT",V.Local.sHold)
+	F.Global.XML.AppendNode("xmlDoc","CONDITION","CONSTANT")
+
+		F.global.xml.createAttributeNode("xmlDoc","Value",V.Local.sJob)
+		F.global.xml.createAttributeNode("xmlDoc","Type","20")
+			F.Global.XML.SetAttributeToNode("xmlDoc","CONSTANT","Value")
+			F.Global.XML.SetAttributeToNode("xmlDoc","CONSTANT","Type")
+		F.Global.XML.DestroyNode("xmlDoc","Value")
+		F.Global.XML.DestroyNode("xmlDoc","Type")
+F.global.xml.destroyNode("xmlDoc","CONSTANT")
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITION",V.Local.sHold)
+F.global.xml.destroyNode("xmlDoc","CONDITION")
+	F.Global.XML.AppendTextNode("xmlDoc","CONDITIONS",V.Local.sHold)
+
+	F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+F.global.xml.destroyNode("xmlDoc","CONDITIONS")
+
+F.global.xml.appendNodeToRoot("xmlDoc","COMMAND")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+
+F.global.xml.appendTextNode("xmlDoc","COMMAND",V.Local.shold)
+F.global.xml.destroyNode("xmlDoc","COMMAND")
+F.Intrinsic.Control.Next(V.Local.iFor)
+
+'
+'----------------------------------------------------------------------------------------------------------------------------------------
+F.global.xml.appendTextNode("xmlDoc","root",V.Ambient.NewLine)
+'Saves document
+F.global.xml.saveDocument("xmlDoc",V.Local.sFilePath,V.Local.sFileName)
+'closes document
+F.global.xml.CloseDocument("xmlDoc")
+
+
+Program.Sub.Update.End
+
+Program.Sub.VerifyJob.Start
+
+V.Local.sSel.Declare(String)
+
+
+F.Intrinsic.String.Concat("select PART from JOB_OPERATIONS inner join V_WORKCENTERS on JOB_OPERATIONS.PART=V_WORKCENTERS.MACHINE where JOB='",V.Passed.009000,"' and SUFFIX='",V.Passed.009001,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,True)
+		F.Intrinsic.Control.CallSub(Unload)
+	F.Intrinsic.Control.endif
+F.ODBC.Con!rstSel.Close
+
+Program.Sub.VerifyJob.End
+
+
