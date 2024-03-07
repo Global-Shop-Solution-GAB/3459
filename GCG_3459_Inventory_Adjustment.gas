@@ -1,0 +1,355 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("Select a Part")
+gui.Form1..size(4485,2325)
+gui.Form1..position(0,0)
+gui.Form1..event(unload,Unload)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.txt1.create(textbox,"",True,2955,300,0,350,400,True,0,Arial,8,-2147483643,1)
+gui.Form1.cmdPrtBrwse.create(button)
+gui.Form1.cmdPrtBrwse.caption("^")
+gui.Form1.cmdPrtBrwse.visible(True)
+gui.Form1.cmdPrtBrwse.size(480,300)
+gui.Form1.cmdPrtBrwse.zorder(0)
+gui.Form1.cmdPrtBrwse.position(3310,400)
+gui.Form1.cmdPrtBrwse.enabled(True)
+gui.Form1.cmdPrtBrwse.fontname("Arial")
+gui.Form1.cmdPrtBrwse.fontsize(8)
+gui.Form1.cmdPrtBrwse.event(click,cmdprtbrwse_click)
+gui.Form1.cmdOk.create(button)
+gui.Form1.cmdOk.caption("Ok")
+gui.Form1.cmdOk.visible(True)
+gui.Form1.cmdOk.size(855,375)
+gui.Form1.cmdOk.zorder(0)
+gui.Form1.cmdOk.position(2890,1100)
+gui.Form1.cmdOk.enabled(True)
+gui.Form1.cmdOk.fontname("Arial")
+gui.Form1.cmdOk.fontsize(8)
+gui.Form1.cmdOk.event(click,cmdok_click)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+
+Variable.UDT.PART.Define("PrdRef",String,"PART")
+Variable.UDT.PART.Define("MatRef",String,"PRODUCT_TYPE")
+Variable.UDT.PART.Define("Height",Float,"THICKNESS")
+Variable.UDT.PART.Define("Length",Float,"LENGTH")
+Variable.UDT.PART.Define("Width",Float,"WIDTH")
+Variable.UDT.PART.Define("RCategory",String)
+
+Variable.UDT.PART.Define("WhRef",String)
+Variable.UDT.PART.Define("Quantity",Float,"QTY_ONHAND")
+
+
+
+Variable.UDT.PART.Define("RCategory",Long)
+
+
+Variable.uGlobal.uPart.Declare("PART")
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: JCT
+'Project Start Date: 05/31/2011
+'
+'v.passed.GRID-ROW-SEL
+'AUX001
+V.Local.sTempAdjust.Declare(String)
+V.Local.bExist.Declare(Boolean)
+V.Local.iRowSel.Declare(Long)
+V.Local.sRowData.Declare(String)
+V.Local.sPart.Declare(String)
+
+F.Intrinsic.String.Concat(V.System.Temp,"\TempAdjust.txt",V.Local.sTempAdjust)
+
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+'post save
+F.Intrinsic.Control.If(V.Caller.Hook,=,26714)
+	F.Intrinsic.Control.CallSub(Cmdok_click)
+
+'pre-save
+F.Intrinsic.Control.elseIf(V.Caller.Hook,=,26713)
+	F.Intrinsic.File.Exists(V.Local.sTempAdjust,V.Local.bExist)
+		F.Intrinsic.Control.If(V.Local.bExist,=,True)
+			F.Intrinsic.File.DeleteFile(V.Local.sTempAdjust)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.RPad(V.Passed.000005," ",17,V.Local.sPart)
+	F.Intrinsic.String.Concat(V.Local.sPart,V.Passed.000006,V.Local.sPart)
+
+	F.Intrinsic.File.String2File(V.Local.sTempAdjust,V.Local.sPart)
+	F.Intrinsic.Control.CallSub(Unload)
+F.Intrinsic.Control.Else
+	Gui.Form1..Show
+F.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+
+
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.end
+
+Program.Sub.Unload.EndProgram.Sub.Main.End
+
+Program.Sub.Adjustment.Start
+V.Local.sHold.Declare(String)
+V.Local.sSelMat.Declare(String)
+V.Local.sFieldRef.Declare(String)
+V.Local.sFldType.Declare(String)
+V.Local.iFor.Declare(Long)
+V.Local.iForB.Declare(Long)
+V.Local.sFieldValue.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.smsg.Declare(String)
+V.Local.sTempAdjust.Declare(String)
+
+
+F.Intrinsic.String.Concat(V.System.Temp,"\TempAdjust.txt",V.Local.sTempAdjust)
+V.uGlobal.uPart.Redim(-1,-1)
+
+F.Intrinsic.Control.If(V.Caller.Hook,=,26714)
+	F.Intrinsic.File.File2String(V.Local.sTempAdjust,V.Local.sPart)
+	F.Intrinsic.File.DeleteFile(V.Local.sTempAdjust)
+'	F.Intrinsic.String.RPad(V.Passed.000005," ",17,V.Local.sPart)
+'	F.Intrinsic.String.Concat(V.Local.sPart,V.Passed.000006,V.Local.sPart)
+F.Intrinsic.Control.Else
+	V.Local.sPart.Set(V.Screen.Form1!txt1.Text)
+F.Intrinsic.Control.EndIf
+'
+'F.Intrinsic.String.Concat("Part: ",V.Local.sSelMat.Trim,V.Local.smsg)
+'F.Intrinsic.UI.Msgbox(V.Local.smsg)
+
+'get part information
+	V.Local.sSelMat.Set("select INVENTORY_MSTR.PART,PRODUCT_TYPE,THICKNESS, LENGTH,WIDTH,INVENTORY_MSTR.QTY_ONHAND from INVENTORY_MSTR ")
+	F.Intrinsic.String.Concat(V.Local.sSelMat," inner join ILT_NEST_MAT_CODE on INVENTORY_MSTR.PART=ILT_NEST_MAT_CODE.PART",V.Local.sSelMat)
+	F.Intrinsic.String.Concat(V.Local.sSelMat," where INVENTORY_MSTR.PART='",V.Local.sPart.trim,"'",V.Local.sSelMat)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstMat",V.Local.sSelMat)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstMat.EOF,=,False)
+			F.Intrinsic.Variable.LoadUDTFromRecordset("Con","rstMat","v.uGlobal.uPart",True,0)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstMat.Close
+
+	f.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uPart!WhRef,"WRH")
+	f.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uPart!RCategory,"51")
+'--------------------------------------------------------------------------------------------------
+
+'create array of field references
+	F.Intrinsic.String.Split("PrdRef*!*MatRef*!*Height*!*Length*!*Width*!*RCategory","*!*",V.Local.sFieldRef)
+'createarrayoffldty
+	F.Intrinsic.String.Split("20*!*20*!*100*!*100*!*100*!*10","*!*",V.Local.sFldType)
+
+
+'create node
+F.global.xml.createElementNode("xmlDoc","COMMAND","")
+	F.global.xml.createAttributeNode("xmlDoc","Name","IMPORT")
+	F.global.xml.createAttributeNode("xmlDoc","TblRef","PRODUCTS")
+
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","Name")
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","TblRef")
+
+	F.Global.XML.DestroyNode("xmlDoc","Name")
+	F.Global.XML.DestroyNode("xmlDoc","TblRef")
+
+
+	F.Intrinsic.String.Concat(V.uGlobal.uPart(v.Local.iFor)!PrdRef,"*!*",V.uGlobal.uPart(v.Local.iFor)!Matref,"*!*",V.uGlobal.uPart(v.Local.iFor)!Height,"*!*",V.uGlobal.uPart(v.Local.iFor)!Length,"*!*",V.uGlobal.uPart(v.Local.iFor)!Width,"*!*",V.uGlobal.uPart(v.Local.iFor)!RCategory,V.Local.sFieldValue)
+	F.Intrinsic.String.Split(V.Local.sFieldValue,"*!*",V.Local.sFieldValue)
+	V.Local.sFieldValue.RedimPreserve(0,5)
+
+'loop for each attribute
+	F.Intrinsic.Control.For(V.Local.iForB,V.Local.sFieldRef.LBound,V.Local.sFieldRef.UBound,1)
+F.Intrinsic.Debug.Stop
+		F.global.xml.createElementNode("xmlDoc","FIELD","")
+			F.global.xml.createAttributeNode("xmlDoc","FldRef",V.Local.sFieldRef(v.Local.iForB))
+			F.global.xml.createAttributeNode("xmlDoc","FldValue",V.Local.sFieldValue(v.Local.iForB))
+			F.global.xml.createAttributeNode("xmlDoc","FldType",V.Local.sFldType(v.Local.iForB))
+
+
+		F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+		F.Global.XML.AppendNode("xmlDoc","COMMAND","FIELD")
+			F.Global.XML.AppendTextNode("xmlDoc","FIELD",V.Local.sHold)
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldRef")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldValue")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldType")
+
+		F.Global.XML.DestroyNode("xmlDoc","FldRef")
+		F.Global.XML.DestroyNode("xmlDoc","FldValue")
+		F.Global.XML.DestroyNode("xmlDoc","FldType")
+	F.global.xml.destroyNode("xmlDoc","FIELD")
+	F.Intrinsic.Control.Next(V.Local.iForB)
+
+'--------------------------------------------------------------------------------------------------
+
+	F.global.xml.appendNodeToRoot("xmlDoc","COMMAND")
+
+	F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+
+F.global.xml.destroyNode("xmlDoc","COMMAND")
+
+
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+F.global.xml.appendTextNode("xmlDoc","COMMAND",V.Local.shold)
+
+F.global.xml.appendNodeToRoot("xmlDoc","COMMAND")
+F.global.xml.destroyNode("xmlDoc","COMMAND")
+
+'--------------------------------------------------------------------------------------------------
+
+'create array of field references
+	F.Intrinsic.String.Split("PrdRef*!*WhRef*!*Quantity","*!*",V.Local.sFieldRef)
+'create array of fldtype
+	F.Intrinsic.String.Split("20*!*20*!*100","*!*",V.Local.sFldType)
+
+
+'create node
+F.global.xml.createElementNode("xmlDoc","COMMAND","")
+	F.global.xml.createAttributeNode("xmlDoc","Name","Import")
+	F.global.xml.createAttributeNode("xmlDoc","TblRef","STOCK")
+
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","Name")
+	F.Global.XML.SetAttributeToNode("xmlDoc","COMMAND","TblRef")
+
+	F.Global.XML.DestroyNode("xmlDoc","Name")
+	F.Global.XML.DestroyNode("xmlDoc","TblRef")
+
+
+	F.Intrinsic.String.Concat(V.uGlobal.uPart(v.Local.iFor)!PrdRef,"*!*",V.uGlobal.uPart(v.Local.iFor)!Whref,"*!*",V.uGlobal.uPart(v.Local.iFor)!Quantity,V.Local.sFieldValue)
+	F.Intrinsic.String.Split(V.Local.sFieldValue,"*!*",V.Local.sFieldValue)
+	V.Local.sFieldValue.RedimPreserve(0,2)
+
+'loop for each attribute
+	F.Intrinsic.Control.For(V.Local.iForB,V.Local.sFieldRef.LBound,V.Local.sFieldRef.UBound,1)
+F.Intrinsic.Debug.Stop
+		F.global.xml.createElementNode("xmlDoc","FIELD","")
+			F.global.xml.createAttributeNode("xmlDoc","FldRef",V.Local.sFieldRef(v.Local.iForB))
+			F.global.xml.createAttributeNode("xmlDoc","FldValue",V.Local.sFieldValue(v.Local.iForB))
+			F.global.xml.createAttributeNode("xmlDoc","FldType",V.Local.sFldType(v.Local.iForB))
+
+
+		F.Global.XML.AppendTextNode("xmlDoc","COMMAND",V.Local.sHold)
+		F.Global.XML.AppendNode("xmlDoc","COMMAND","FIELD")
+			F.Global.XML.AppendTextNode("xmlDoc","FIELD",V.Local.sHold)
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldRef")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldValue")
+			F.Global.XML.SetAttributeToNode("xmlDoc","FIELD","FldType")
+
+		F.Global.XML.DestroyNode("xmlDoc","FldRef")
+		F.Global.XML.DestroyNode("xmlDoc","FldValue")
+		F.Global.XML.DestroyNode("xmlDoc","FldType")
+	F.global.xml.destroyNode("xmlDoc","FIELD")
+	F.Intrinsic.Control.Next(V.Local.iForB)
+
+'--------------------------------------------------------------------------------------------------
+
+	F.global.xml.appendNodeToRoot("xmlDoc","COMMAND")
+
+	F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+	F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+
+F.global.xml.destroyNode("xmlDoc","COMMAND")
+
+
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+F.global.xml.appendTextNode("xmlDoc","COMMAND",V.Local.shold)
+
+F.global.xml.appendNodeToRoot("xmlDoc","COMMAND")
+F.global.xml.destroyNode("xmlDoc","COMMAND")
+
+
+Program.Sub.Adjustment.End
+
+program.sub.cmdprtbrwse_click.start
+
+V.Local.sTitles.Declare(String)
+V.Local.sWidths.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sSel.Declare(String)
+
+
+F.Intrinsic.String.Split("Part*!*Description","*!*",V.Local.sTitles)
+F.Intrinsic.String.Split("1500*!*3500","*!*",V.Local.sWidths)
+
+F.Intrinsic.Ui.miniBrowser("Part","Con","select PART,DESCRIPTION from INVENTORY_MSTR ",V.Local.sTitles,V.Local.sWidths,V.Local.sRet)
+	F.Intrinsic.Control.If(V.Local.sRet,<>,"***CANCEL***")
+		F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+		Gui.Form1.txt1.Text(V.Local.sRet(0))
+	F.Intrinsic.Control.Endif
+
+
+
+program.sub.cmdprtbrwse_click.end
+
+program.sub.cmdok_click.start
+
+V.Local.sFileName.Declare(String)
+V.Local.sFilePath.Declare(String)
+V.Local.sHold.Declare(String)
+V.Local.sTempAdjust.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.sdatetime.Declare(String)
+
+F.Intrinsic.String.Concat(V.Ambient.Date.pervasivedate,V.Ambient.Time,V.Local.sdatetime)
+F.Intrinsic.String.StripCharacters(V.Local.sdatetime,V.Local.sdatetime)
+
+F.Intrinsic.String.Concat(V.System.Temp,"\TempAdjust.txt",V.Local.sTempAdjust)
+	F.Intrinsic.File.File2String(V.Local.sTempAdjust,V.Local.sPart)
+
+'V.Local.sFileName.Set("Inv_Adjust.xml")
+F.Intrinsic.String.Concat(V.Local.sPart.trim,"_",V.Local.sdatetime,".xml",V.Local.sFileName)
+F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\InventoryOut\",V.Local.sFilePath)
+F.global.xml.createDocument("xmlDoc",False,True,False,False)
+
+F.Intrinsic.UI.InvokeWaitDialog("Creating XML file.")
+'set root node
+F.global.xml.SetRoot("xmlDoc","DATAEX")
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+F.global.xml.appendTextNode("xmlDoc","root",V.Local.shold)
+
+
+F.Intrinsic.Control.CallSub(Adjustment)
+
+
+F.global.xml.appendTextNode("xmlDoc","root",V.Ambient.NewLine)
+'Saves document
+F.global.xml.saveDocument("xmlDoc",V.Local.sFilePath,V.Local.sFileName)
+'closes document
+F.global.xml.CloseDocument("xmlDoc")
+
+F.Intrinsic.UI.CloseWaitDialog
+F.Intrinsic.UI.Msgbox("Create Completed")
+
+
+F.Intrinsic.Control.CallSub(Unload)
+
+program.sub.cmdok_click.end
+
+Program.Sub.ScreenSS.Start
+SS_Form1{{CAPTION::
+SS_Form1.CTRL{{NAME::txtJob\\TYPE::2\\CAPTION::Job\\TABSTOP::1\\GROUP::-1\\BROWSER::1
+SS_Form1.CTRL{{NAME::txtSuffix\\TYPE::2\\CAPTION::Suffix\\TABSTOP::2\\GROUP::-1\\BROWSER::0
+SS_Form1.CTRL{{NAME::cmdOk\\TYPE::5\\CAPTION::Ok\\TABSTOP::3\\GROUP::-1\\BROWSER::0
+
+Program.Sub.ScreenSS.End
+
