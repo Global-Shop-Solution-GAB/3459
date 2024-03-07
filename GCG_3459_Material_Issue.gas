@@ -1,0 +1,351 @@
+Program.Sub.ScreenSU.Start
+gui.Form1..create
+gui.Form1..caption("")
+gui.Form1..size(3120,1140)
+gui.Form1..position(0,0)
+gui.Form1..alwaysontop(False)
+gui.Form1..fontname("Arial")
+gui.Form1..fontsize(8)
+gui.Form1..forecolor(0)
+gui.Form1..fontstyle(,,,,)
+gui.Form1..BackColor(-2147483633)
+gui.Form1..controlbox(True)
+gui.Form1..maxbutton(True)
+gui.Form1..minbutton(True)
+gui.Form1..mousepointer(0)
+gui.Form1..moveable(True)
+gui.Form1..sizeable(True)
+gui.Form1..ShowInTaskBar(True)
+gui.Form1..titlebar(True)
+gui.Form1.lbl1.create(label,"Reading xml file.",True,2490,255,1,200,200,True,2,Arial,10,-2147483633,0)
+gui.Form1.lbl1.fontstyle(True,False,False,False)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: JCT
+'Project Start Date: 08/15/2011
+'Lantek Integragration for Iowa Laser
+
+V.Local.sDocList.Declare(String)
+V.Local.sDocName.Declare(String)
+V.Local.sImportDir.Declare(String)
+V.Local.sDir.Declare(String)
+V.Local.iFor.Declare(Long)
+V.Local.bEofNest.Declare(Boolean)
+V.Local.bEofMNOO.Declare(Boolean)
+V.Local.bEofSheet.Declare(Boolean)
+V.Local.bExists.Declare(Boolean)
+V.Local.iForDocs.Declare(Long)
+V.Local.iForJob.Declare(Long)
+V.Local.iForMNOO.Declare(Long)
+V.Local.iForSheet.Declare(Long)
+V.Local.iForSeq.Declare(Long)
+V.Local.iForFile.Declare(Long)
+V.Local.sSet.Declare(String)
+V.Local.sNestID.Declare(String)
+V.Local.iNestQty.Declare(Long)
+V.Local.sFName.Declare(String)
+V.Local.sFType.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sXquery.Declare(String)
+V.Local.sDoc.Declare(String)
+V.Local.sDocBkp.Declare(String)
+V.Local.iRet.Declare(Long)
+V.Local.sJob.Declare(String)
+V.Local.sGSSJob.Declare(String)
+V.Local.sGSSSuffix.Declare(String)
+V.Local.sGSSMatSeq.Declare(String)
+V.Local.sGSSMNOO.Declare(String)
+V.Local.sMNOO.Declare(String)
+V.Local.sSheet.Declare(String)
+V.Local.sMatSeq.Declare(String)
+V.Local.sQuery.Declare(String)
+V.Local.sQueryB.Declare(String)
+V.Local.sIssue.Declare(String)
+V.Local.sloadfile.Declare(String)
+V.Local.sLoadData.Declare(String)
+V.Local.iHndl.Declare(Long)
+V.Local.sSchedule.Declare(String)
+V.Local.sSchedJob.Declare(String)
+V.Local.sSchedSuff.Declare(String)
+V.Local.sUpdate.Declare(String)
+V.Local.sUFT8.Declare(String)
+V.Local.sUFD17.Declare(String)
+V.Local.sUFT1.Declare(String)
+V.Local.sJH.Declare(String)
+V.Local.sLabSeq.Declare(String)
+V.Local.sWC.Declare(String)
+V.Local.sUFT9.Declare(String)
+V.Local.sUF1.Declare(String)
+
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\MaterialIssueIn\",V.Local.sDir)
+F.Intrinsic.String.Concat(V.Caller.PluginsDir,"\Lantek\GSS\MaterialIssueIn\Imported",V.Local.sImportDir)
+	F.Intrinsic.File.DirExists(V.Local.sImportDir,V.Local.bExists)
+		F.Intrinsic.Control.If(V.Local.bExists,=,False)
+			F.Intrinsic.File.CreateDir(V.Local.sImportDir)
+		F.Intrinsic.Control.EndIf
+
+F.Intrinsic.File.GetFileList(V.Local.sDir,V.Local.sDocList)
+F.Intrinsic.String.Split(V.Local.sDocList,":",V.Local.sDocList)
+F.Intrinsic.Control.If(V.Local.sDocList(0).Trim,<>,"")
+Gui.Form1..Show
+'for each document
+F.Intrinsic.Control.For(V.Local.iForDocs,V.Local.sDocList.LBound,V.Local.sDocList.UBound,1)
+	F.Intrinsic.String.Concat("xmlDoc",V.Local.iForDocs,V.Local.sDoc)
+'get file path
+	F.Intrinsic.String.Concat(V.Local.sDir,V.Local.sDocList(V.Local.iForDocs),V.Local.sDocName)
+	F.Intrinsic.String.Concat(V.Local.sImportDir,"\",V.Local.sDocList(V.Local.iForDocs),V.Local.sDocBkp)
+'load document and Query document to a node set using Xpath
+	V.local.bEOFNest.Set(False)
+	V.Local.sJOB.Redim(0,0)
+	V.Local.iForJob.Set(0)
+	F.Global.XML.LoadDocument(V.Local.sDoc,V.Local.sDocName,False,True,False,False)
+		F.Global.XML.Query(V.Local.sDoc,"set1","//JOB")
+			F.Intrinsic.Control.dountil(V.local.bEOFNest,=,True)
+				V.Local.sJOB.RedimPreserve(0,V.Local.iForJob)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"set1","id",V.Local.sJOB(V.Local.iForJob))
+				F.Intrinsic.Math.Add(V.Local.iForJob,1,V.Local.iForJob)
+			F.global.xml.next(V.Local.sDoc,"set1",V.local.bEOFNest)
+			F.Intrinsic.Control.loop
+		Function.global.xml.closeSet(V.Local.sDoc,"set1")
+
+''for each JOB
+	F.Intrinsic.Control.For(V.Local.iForJob,V.Local.sJob.LBound,V.Local.sJob.UBound,1)
+'get MNOO values for  job
+		V.Local.bEofMNOO.Set(False)
+		V.Local.iForMNOO.Set(0)
+		V.Local.sMNOO.Redim(0,0)
+		F.Intrinsic.String.Concat("//JOB[@id=",V.Ambient.DblQuote,V.Local.sJob(v.Local.iForJob),V.Ambient.DblQuote,"]/MNOO","",V.Local.sQuery)
+		F.global.XML.Query(V.Local.sDoc,"set2",V.Local.sQuery)
+			F.Intrinsic.Control.DoUntil(V.Local.bEofMNOO,=,True)
+				V.Local.sMNOO.RedimPreserve(0,V.Local.iForMNOO)
+					Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"set2","id",V.Local.sMNOO(v.Local.iForMNOO))
+				F.Intrinsic.Math.Add(V.Local.iForMNOO,1,V.Local.iForMNOO)
+			F.global.xml.next(V.Local.sDoc,"set2",V.local.bEOFMNOO)
+			F.Intrinsic.Control.Loop
+		Function.global.xml.closeSet(V.Local.sDoc,"set2")
+
+'for each Job/MNOO
+		F.Intrinsic.Control.For(V.Local.iForMNOO,V.Local.sMNOO.LBound,V.Local.sMNOO.UBound,1)
+			F.Intrinsic.String.LPad(V.Local.sMNOO(v.Local.iForMNOO)," ",9,V.Local.sGSSMNOO)
+			F.Intrinsic.String.Left(V.Local.sGSSMNOO,6,V.Local.sGSSJob)
+			F.Intrinsic.String.Right(V.Local.sGSSMNOO,3,V.Local.sGSSSuffix)
+
+'get matseq
+			F.Intrinsic.String.Concat("//JOB[@id=",V.Ambient.DblQuote,V.Local.sJob(v.Local.iForJob),V.Ambient.DblQuote,"]/MNOO[@id=",V.Ambient.DblQuote,V.Local.sMNOO(v.Local.iForMNOO),V.Ambient.DblQuote,"]/MATSEQNUM","",V.Local.sQuery)
+			F.global.XML.Query(V.Local.sDoc,"set3",V.Local.sQuery)
+					Function.Global.XML.ReadNodeSetValue(V.Local.sDoc,"set3","text",V.Local.sMatSeq)
+			Function.global.xml.closeSet(V.Local.sDoc,"set3")
+
+'get labseq
+			F.Intrinsic.String.Concat("//JOB[@id=",V.Ambient.DblQuote,V.Local.sJob(v.Local.iForJob),V.Ambient.DblQuote,"]/MNOO[@id=",V.Ambient.DblQuote,V.Local.sMNOO(v.Local.iForMNOO),V.Ambient.DblQuote,"]/LABORSEQ","",V.Local.sQuery)
+			F.global.XML.Query(V.Local.sDoc,"set3",V.Local.sQuery)
+					Function.Global.XML.ReadNodeSetValue(V.Local.sDoc,"set3","text",V.Local.sLabSeq)
+			Function.global.xml.closeSet(V.Local.sDoc,"set3")
+
+'get WC
+			F.Intrinsic.String.Concat("//JOB[@id=",V.Ambient.DblQuote,V.Local.sJob(v.Local.iForJob),V.Ambient.DblQuote,"]/MNOO[@id=",V.Ambient.DblQuote,V.Local.sMNOO(v.Local.iForMNOO),V.Ambient.DblQuote,"]/WC","",V.Local.sQuery)
+			F.global.XML.Query(V.Local.sDoc,"set3",V.Local.sQuery)
+					Function.Global.XML.ReadNodeSetValue(V.Local.sDoc,"set3","text",V.Local.sWC)
+			Function.global.xml.closeSet(V.Local.sDoc,"set3")
+
+'get Sheet id's
+			V.local.bEOFMNOO.Set(False)
+			V.Local.iForSheet.Set(0)
+			V.Local.sSheet.Redim(0,0)
+			F.Intrinsic.String.Concat("//JOB[@id=",V.Ambient.DblQuote,V.Local.sJob(v.Local.iForJob),V.Ambient.DblQuote,"]/MNOO[@id=",V.Ambient.DblQuote,V.Local.sMNOO(v.Local.iForMNOO),V.Ambient.DblQuote,"]/SHEET","",V.Local.squery)
+			F.global.XML.Query(V.Local.sDoc,"set4",V.Local.squery)
+				F.Intrinsic.Control.dountil(V.local.bEOFMNOO,=,True)
+					V.Local.sSheet.RedimPreserve(0,V.Local.iForSheet)
+						Function.Global.XML.ReadNodeSetAttribute(V.Local.sDoc,"set4","id",V.Local.sSheet(v.Local.iForSheet))
+					F.Intrinsic.Math.Add(V.Local.iForSheet,1,V.Local.iForSheet)
+				F.global.xml.next(V.Local.sDoc,"set4",V.local.bEOFMNOO)
+				F.Intrinsic.Control.Loop
+			Function.global.xml.closeSet(V.Local.sDoc,"set4")
+
+'for each sheet, get issue amt
+			F.Intrinsic.Control.For(V.Local.iForSheet,V.Local.sSheet.LBound,V.Local.sSheet.UBound,1)
+'verify part is the one on the seq, if not set seq to misc 995000
+				F.Intrinsic.Control.CallSub(Partverify,"JOB",V.Local.sGSSJob,"SUFFIX",V.Local.sGSSSuffix,"SEQ",V.Local.sMatSeq,"PART",V.Local.sSheet(v.Local.iForSheet))
+					F.Intrinsic.Control.If(V.Args.SEQPART,=,"False")
+						V.Local.sGSSMatSeq.Set("995000")
+						V.Local.sUFT1.Set(V.Args.MISCPART)
+					F.Intrinsic.Control.Else
+						V.Local.sGSSMatSeq.Set(V.Local.sMatSeq)
+					F.Intrinsic.Control.EndIf
+
+				F.Intrinsic.String.Concat("//JOB[@id=",V.Ambient.DblQuote,V.Local.sJob(v.Local.iForJob),V.Ambient.DblQuote,"]/MNOO[@id=",V.Ambient.DblQuote,V.Local.sMNOO(v.Local.iForMNOO),V.Ambient.DblQuote,"]/SHEET[@id=",V.Ambient.DblQuote,V.Local.sSheet(v.Local.iForSheet),V.Ambient.DblQuote,"]/ISSUE",V.Local.squeryB)
+				F.Global.XML.Query(V.Local.sDoc,"set5",V.Local.sQueryB)
+					F.Global.XML.ReadNodeSetValue(V.Local.sDoc,"set5","text",V.Local.sIssue)
+					F.Intrinsic.String.Format(V.Local.sIssue,"0.000",V.Local.sIssue)
+'concat line of data for WIR100
+				F.Intrinsic.Control.If(V.Local.sLoadData.Trim,=,"")
+					F.Intrinsic.String.Concat(V.Local.sSheet(v.Local.iForSheet),",,,",V.Local.sIssue,",,,,,",V.Local.sGSSJob.Trim,",",V.Local.sGSSsuffix.Trim,",",V.Local.sGSSMatSeq,V.Local.sLoadData)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.Concat(V.Local.sLoadData,V.Ambient.NewLine,V.Local.sSheet(v.Local.iForSheet),",,,",V.Local.sIssue,",,,,,",V.Local.sGSSJob.Trim,",",V.Local.sGSSsuffix.Trim,",",V.Local.sGSSMatSeq,V.Local.sLoadData)
+				F.Intrinsic.Control.EndIf
+
+				F.Global.XML.CloseSet(V.Local.sDoc,"set5")
+			F.Intrinsic.Control.Next(V.Local.iForSheet)
+
+'moved from Load Schedule
+'need to get seq on incoming file, for now, defaulted to LS20 seq
+			F.Intrinsic.String.Left(V.Local.sMNOO(v.Local.iForMNOO),6,V.Local.sSchedJob)
+			F.Intrinsic.String.Right(V.Local.sMNOO(v.Local.iForMNOO),3,V.Local.sSchedSuff)
+			F.Intrinsic.String.Concat("select PART from V_Job_Operations where Job='",V.Local.sSchedJob,"' and Suffix='",V.Local.sSchedSuff,"' and Seq='",V.Local.sLabSeq,"'",V.Local.sSchedule)
+			F.ODBC.Connection!Con.OpenRecordsetRW("rstSchedule",V.Local.sSchedule)
+				F.Intrinsic.Control.If(V.ODBC.Con!rstSchedule.EOF,=,False)
+					F.Intrinsic.String.Concat("update Job_Operations set PART='",V.Local.sWC,"'where Job='",V.Local.sSchedJob,"'and Suffix='",V.Local.sSchedSuff,"' and Seq='",V.Local.sLabSeq,"'",V.Local.sUpdate)
+					F.ODBC.Connection!Con.Execute(V.Local.sUpdate)
+				F.Intrinsic.Control.EndIf
+			F.ODBC.Con!rstSchedule.Close
+
+			F.Intrinsic.String.Concat("select Date_Due from V_Job_Header where Job='",V.Local.sSchedJob,"' and Suffix='",V.Local.sSchedSuff,"'",V.Local.sJH)
+			F.ODBC.Connection!Con.OpenLocalRecordsetRO("rstJH",V.Local.sJH)
+				F.Intrinsic.Control.If(V.ODBC.Con!rstJH.EOF,=,False)
+					F.Global.APS.ScheduleJob(V.Local.sSchedJob,V.Local.sSchedSuff,"B",V.ODBC.Con!rstJH.FieldValTrim!Date_Due)
+				F.Intrinsic.Control.EndIf
+			F.ODBC.Con!rstJH.Close
+
+'update values on Atg_Xtra_Wouf table
+			F.Intrinsic.String.Left(V.Local.sMNOO(v.Local.iForMNOO),6,V.Local.sSchedJob)
+			F.Intrinsic.String.Right(V.Local.sMNOO(v.Local.iForMNOO),3,V.Local.sSchedSuff)
+			F.Intrinsic.String.Format(V.Ambient.Time,"hhmmss",V.Local.sUFT8)
+				F.Intrinsic.String.Concat(V.Local.sUFT8,"000100",V.Local.sUFT8)
+			F.Intrinsic.String.Format(V.Ambient.Date,"yyyy-mm-dd",V.Local.sUFD17)
+
+			' *************************** added jrm for nest sort number **********************************
+			F.Intrinsic.String.Right(V.Local.sJOB(v.Local.iForJOB),6,V.Local.sUFT9)
+				F.Intrinsic.String.Concat(V.Local.sUFT9,".0",V.Local.sUFT9)
+
+
+			F.Intrinsic.String.Concat("select * from Atg_Xtra_Wouf where Job='",V.Local.sSchedJob,"' and Suffix='",V.Local.sSchedSuff,"' ",V.Local.sSchedule)
+			F.ODBC.Connection!Con.OpenRecordsetRW("rstSchedule",V.Local.sSchedule)
+				F.Intrinsic.Control.If(V.ODBC.Con!rstSchedule.EOF,=,False)
+					F.ODBC.Con!rstSchedule.Set!Wc_Trumpf(V.Local.sWC)
+					F.ODBC.Con!rstSchedule.Set!Task(V.Local.sJob(v.Local.iForJob))
+					F.ODBC.Con!rstSchedule.Set!Uf_T_8(V.Local.sUFT8)
+					F.ODBC.Con!rstSchedule.Set!Uf_D_17(V.Local.sUFD17)
+
+					' *************************** added jrm for nest sort number **********************************
+					F.ODBC.Con!rstSchedule.Set!Uf_T_9(V.Local.sUFT9)
+
+					' ************************************** removed for now, material issue log xls file does this, may want again later ********************************
+					'F.Intrinsic.Control.If(V.Local.sGSSMatSeq,=,"995000")
+						'F.ODBC.Con!rstSchedule.Set!Uf_T_1(V.Local.sUFT1)
+					'F.Intrinsic.Control.EndIf
+					F.ODBC.Con!rstSchedule.Update
+				F.Intrinsic.Control.EndIf
+			F.ODBC.Con!rstSchedule.Close
+
+'
+' **************************** added jrm 04/04/2012 *********************************************************************************
+			'F.ODBC.Connection!Con.OpenConnection("GLOBAL_ILT","Master","master")
+			F.ODBC.Connection!ConAcc.OpenConnection("APS_ILT","","")
+
+'update values on XTRA_SORT_INFO access table in apsilt.mdb
+				F.Intrinsic.String.Left(V.Local.sMNOO(v.Local.iForMNOO),6,V.Local.sSchedJob)
+				F.Intrinsic.String.Right(V.Local.sMNOO(v.Local.iForMNOO),3,V.Local.sSchedSuff)
+				F.Intrinsic.String.Format(V.Ambient.Time,"hhmmss",V.Local.sUFT8)
+					F.Intrinsic.String.Concat(V.Local.sUFT8,"000100",V.Local.sUFT8)
+				F.Intrinsic.String.Format(V.Ambient.Date,"yyyy-mm-dd",V.Local.sUFD17)
+
+				' *************************** added jrm for nest sort number **********************************
+				F.Intrinsic.String.Right(V.Local.sJOB(v.Local.iForJOB),6,V.Local.sUFT9)
+					F.Intrinsic.String.Concat(V.Local.sUFT9,".0",V.Local.sUFT9)
+
+				F.Intrinsic.String.Concat("select * from XTRA_SORT_INFO where Job='",V.Local.sSchedJob,"' and Suf='",V.Local.sSchedSuff,"' ",V.Local.sSchedule)
+				F.ODBC.Connection!ConAcc.OpenRecordsetRW("rstAPS",V.Local.sSchedule)
+					F.Intrinsic.Control.If(V.ODBC.ConAcc!rstAPS.EOF,=,False)
+						F.ODBC.ConAcc!rstAPS.Set!MACHINE(V.Local.sWC)
+						'F.ODBC.ConAcc!rstAPS.Set!Task(V.Local.sJob(v.Local.iForJob))
+						F.ODBC.ConAcc!rstAPS.Set!SORT_TIME(V.Local.sUFT8)
+						F.ODBC.ConAcc!rstAPS.Set!SORT_DATE(V.Local.sUFD17)
+
+						' *************************** added jrm for nest sort number **********************************
+						F.ODBC.ConAcc!rstAPS.Set!SORT_NEST(V.Local.sUFT9)
+
+						F.ODBC.ConAcc!rstAPS.Update
+					F.Intrinsic.Control.EndIf
+				F.ODBC.ConAcc!rstAPS.Close
+			F.ODBC.Connection!ConAcc.Close
+'******************************************************************************************************************************************8
+'update values on wo_user_flds table
+			F.Intrinsic.String.Concat("select * from WO_USER_FLDS where Job='",V.Local.sSchedJob,"' and Suffix='",V.Local.sSchedSuff,"' ",V.Local.sUF1)
+			F.ODBC.Connection!Con.OpenRecordsetRW("rstUF1",V.Local.sUF1)
+				F.Intrinsic.Control.If(V.ODBC.Con!rstUF1.EOF,=,False)
+					'write task from sigmanest or job number from lantek to table
+					F.ODBC.Con!rstUF1.Set!USER_1(V.Local.sJob(v.Local.iForJob))
+					F.ODBC.Con!rstUF1.Update
+				F.Intrinsic.Control.EndIf
+			F.ODBC.Con!rstUF1.Close
+
+		F.Intrinsic.Control.Next(V.Local.iForMNOO)
+	F.Intrinsic.Control.Next(V.Local.iForJob)
+
+	F.Global.XML.CloseDocument(V.Local.sDoc)
+'move doc to completed folder
+	F.Intrinsic.File.CopyFile(V.Local.sDocName,V.Local.sDocBkp)
+	F.Intrinsic.File.DeleteFile(V.Local.sDocName)
+F.Intrinsic.Control.Next(V.Local.iForDocs)
+
+
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\L",V.Caller.CompanyCode,V.Caller.Terminal,"MOPEN.txt",V.Local.sloadfile)
+F.Intrinsic.File.String2File(V.Local.sLoadFile,V.Local.sLoadData)
+F.Intrinsic.String.Concat(V.Ambient.DblQuote,"L",V.Caller.CompanyCode,V.Caller.Terminal,"MOPEN.txt",V.Ambient.DblQuote,V.Local.sLoadFile)
+F.Intrinsic.Task.LaunchGSSaSync("WIR100","-C",V.Local.sLoadFile,V.Local.iHndl)
+
+'F.Intrinsic.UI.Msgbox("Import Complete")
+F.Intrinsic.Control.Else
+'F.Intrinsic.UI.Msgbox("No documents to import")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Unload)
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+
+f.ODBC.Connection!Con.Close
+F.Intrinsic.Control.End
+
+Program.Sub.Unload.End
+
+Program.Sub.PartVerify.Start
+
+V.Local.ssel.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.bSeqPart.Declare(Boolean)
+
+F.Intrinsic.String.Concat("select PART,Description from JOB_OPERATIONS where JOB='",V.Args.JOB.Trim,"' and SUFFIX='",V.Args.SUFFIX.Trim,"' and SEQ='",V.Args.SEQ,"' and PART='",V.Args.Part,"'",V.Local.ssel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.ssel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.bSeqPart.Set(True)
+	F.Intrinsic.Control.Else
+		V.Local.bSeqPart.Set(False)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+F.Intrinsic.Control.If(V.Local.bSeqPart,=,False)
+	F.Intrinsic.String.Concat("select Part, Description from Inventory_Mstr where Part='",V.Args.Part,"'",V.Local.ssel)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.ssel)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+			F.Intrinsic.String.Concat(V.ODBC.Con!rstSel.FieldValTrim!Part,"~",V.ODBC.Con!rstSel.FieldValTrim!Description,V.Local.sPart)
+		F.Intrinsic.Control.EndIf
+	F.ODBC.Con!rstSel.Close
+F.Intrinsic.Control.EndIf
+
+
+F.Intrinsic.Variable.AddRV("SEQPART",V.Local.bSeqPart)
+F.Intrinsic.Variable.AddRV("MISCPART",V.Local.sPart)
+
+Program.Sub.PartVerify.End
+
+
