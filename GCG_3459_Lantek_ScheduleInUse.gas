@@ -1,0 +1,58 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+
+Program.Sub.Main.Start
+'Coded by: JCT
+'Project Start Date: 10/17/2011
+'Hooks:
+'  15756
+'Other Components:
+'  for Iowa Laser Lantek Integration.
+'  to know which flex schedule, the completed job was on
+
+V.Local.sSel.Declare(String)
+V.Local.iJobCt.Declare(Long)
+
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.Intrinsic.String.Concat("select Schedule, ScheduleSuffix from Lantek_3459_Wos where  Schedule='",V.Passed.009990,"' and ScheduleSuffix='",V.Passed.009991,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,True)
+		F.Intrinsic.Control.GoTo("END")
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+
+F.Intrinsic.String.Concat("select count(Job+Suffix) as JobCt from Job_CT_Flx_Schd where Schedule='",V.Passed.009990,"' and Schedule_Suffix='",V.Passed.009991,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.iJobCt.Set(V.ODBC.Con!rstSel.FieldVal!JobCt)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+F.Intrinsic.String.Concat("select * from Lantek_3459_SchedInUse where employee='",V.Passed.009993,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRW("rstSIU",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSIU.EOF,=,True)
+		F.ODBC.Con!rstSIU.AddNew
+			F.ODBC.Con!rstSIU.Set!Employee(V.Passed.009993)
+	F.Intrinsic.Control.EndIf
+			F.ODBC.Con!rstSIU.Set!Schedule(V.Passed.009990)
+			F.ODBC.Con!rstSIU.Set!ScheduleSuffix(V.Passed.009991)
+			F.ODBC.Con!rstSIU.Set!Trmnl(V.Caller.Terminal)
+			F.ODBC.Con!rstSIU.Set!Jobs_On_Sched(V.Local.iJobCt)
+	F.ODBC.Con!rstSIU.Update
+F.ODBC.Con!rstSIU.Close
+
+F.Intrinsic.Control.Label("END")
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.End
+
+Program.Sub.Main.End
+
+
+
